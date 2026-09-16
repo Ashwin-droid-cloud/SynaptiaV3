@@ -881,6 +881,87 @@
       "summary": "\u2022 Ashwin fears surveillance; camera visit tomorrow.\n\u2022 Jury house ending; cares for daughter, mentions Cloud; uncertain round.\n\u2022 Talked about rhythm and style; eats same food.",
       "voice_verified": true,
       "timestamp": "2026-09-16T07:02:47.424586"
+    },
+    {
+      "id": "conv_1789542196066_9e12f7",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 How many people are doing? \u2022 The new album is made by you. \u2022 Yes, it's a new album.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T07:03:16.066873"
+    },
+    {
+      "id": "conv_1789542197380_8d8b80",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 How many people are doing? \u2022 The new album is made by you. \u2022 Yes, it's a new album.",
+      "summary": "\u2022 Ashwin fears surveillance; camera visit tomorrow\n\u2022 Caring for daughter; jury house ending; mentions Cloud\n\u2022 New album created by Ashwin",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T07:03:17.380688"
+    },
+    {
+      "id": "conv_1789542206191_815419",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Are you sure you collaborate?",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T07:03:26.191346"
+    },
+    {
+      "id": "conv_1789542207661_68ff72",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Are you sure you collaborate?",
+      "summary": "\u2022 Ashwin fears surveillance; camera visit scheduled tomorrow.\n\u2022 Caring for daughter; jury house ending; mentions Cloud.\n\u2022 Created new album; expressed uncertainty about collaboration.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T07:03:27.661811"
+    },
+    {
+      "id": "conv_1789542234600_35d60f",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Overnight we came up with this solution that there might be a person looking into some kind of family pictures. \u2022 So he might not be\u2026",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T07:03:54.600609"
+    },
+    {
+      "id": "conv_1789542236091_9084c5",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Overnight we came up with this solution that there might be a person looking into some kind of family pictures. \u2022 So he might not be\u2026",
+      "summary": "\u2022 Fears surveillance; camera visit tomorrow, suspects someone viewing family photos.\n\u2022 Caring for daughter; jury house ending; mentions Cloud.\n\u2022 Created new album; unsure about collaboration.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T07:03:56.091174"
+    },
+    {
+      "id": "conv_1789542244992_206e25",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 When you upload the picture, it would be with descriptions showing you what was the person and what was the last kind of conversation.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T07:04:04.992688"
+    },
+    {
+      "id": "conv_1789542247466_b2b21d",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 When you upload the picture, it would be with descriptions showing you what was the person and what was the last kind of conversation.",
+      "summary": "\u2022 Fears surveillance; camera visit tomorrow, suspects family photos viewed.\n\u2022 Caring for daughter; jury house ending; mentions Cloud.\n\u2022 New album uploads include person description and conversation.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T07:04:07.466794"
+    },
+    {
+      "id": "conv_1789542256077_1fcfdb",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 And I want to know that if you already have a record, you don't remember the post time, but already enrolled, you can also be\u2026",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T07:04:16.077338"
     }
   ],
   "rhythm": [
