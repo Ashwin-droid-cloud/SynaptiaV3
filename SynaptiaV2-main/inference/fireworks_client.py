@@ -26,7 +26,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if GROQ_API_KEY:
     api_key = GROQ_API_KEY
     base_url = "https://api.groq.com/openai/v1"
-    DEFAULT_MODEL = os.getenv("GROQ_MODEL", "groq/compound")
+    DEFAULT_MODEL = os.getenv("GROQ_MODEL", "groq/compound-mini")
     provider_name = "Groq"
 elif FIREWORKS_API_KEY:
     api_key = FIREWORKS_API_KEY
@@ -41,7 +41,7 @@ elif OPENAI_API_KEY:
 else:
     api_key = "dummy"
     base_url = "https://api.groq.com/openai/v1"
-    DEFAULT_MODEL = "groq/compound"
+    DEFAULT_MODEL = "llama-3.3-70b-versatile"
     provider_name = "Mock/Disabled"
 
 logger.info(f"Initialized LLM client using provider: {provider_name} (model: {DEFAULT_MODEL})")

@@ -21,15 +21,21 @@ from database import (
     get_person_memory,
     get_recent_transcripts,
     get_voice_identity,
+    get_all_voice_identities,
+    delete_voice_identity,
     list_face_identities,
     record_face_observation,
     record_transcript,
+    record_distinct_conversation,
+    get_distinct_conversations,
+    list_all_conversations,
+    clear_person_conversations,
     upsert_face_identity,
     upsert_person_memory,
     upsert_voice_identity,
     update_person_context,
 )
-from voice_verifier import verify_speaker_voice
+from voice_verifier import verify_speaker_voice, identify_best_speaker
 from fireworks_client import (
     GROQ_API_KEY,
     aggregate_conversation_context,
@@ -137,7 +143,7 @@ _client_queues: list[asyncio.Queue[InferenceResult]] = []
 # An external metadata stream is optional. It is deliberately disabled by
 # default so development never fabricates people or conversations from the
 # simulator. Set METADATA_SERVICE_URL explicitly only for a real producer.
-METADATA_SERVICE_URL = os.getenv("METADATA_SERVICE_URL", "http://localhost:9000/stream/conversation")
+METADATA_SERVICE_URL = os.getenv("METADATA_SERVICE_URL", "")
 _memory_ai_retry_at: datetime | None = None
 
 
@@ -159,6 +165,8 @@ class FaceObservationPayload(BaseModel):
 class FaceIdentityPayload(BaseModel):
     name: str = Field(min_length=1, max_length=80)
     descriptor: list[float] = Field(min_items=128, max_items=128)
+    relationship: str | None = Field(default=None, max_length=120)
+    description: str | None = Field(default=None, max_length=500)
 
 
 class VoiceIdentityPayload(BaseModel):
@@ -176,6 +184,7 @@ class AudioTranscriptionPayload(BaseModel):
     filename: str = Field(default="recording.webm", min_length=1, max_length=120)
     content_type: str = Field(default="audio/webm", min_length=1, max_length=100)
     person_name: str | None = Field(default=None, max_length=80)
+    candidate_names: list[str] | None = Field(default=None)
     voice_descriptor: list[float] | None = Field(default=None)
 
 
@@ -264,6 +273,9 @@ async def persist_transcript_memory(person_name: str | None, text: str) -> tuple
     summary = await build_person_memory(person_name)
     if summary:
         upsert_person_memory(person_name, summary)
+
+    # Persist strictly into individual's distinct conversation store
+    record_distinct_conversation(person_name, cleaned_text, summary=summary, voice_verified=True)
     return record, summary
 
 
@@ -673,9 +685,14 @@ async def get_face_identities():
 
 @app.put("/api/face-identities")
 async def enroll_face_identity(payload: FaceIdentityPayload):
-    """Create or replace an enrolled face descriptor for a supplied name."""
+    """Create or replace an enrolled face descriptor for a supplied name and relationship."""
     try:
-        record = upsert_face_identity(payload.name.strip(), payload.descriptor)
+        record = upsert_face_identity(
+            payload.name.strip(),
+            payload.descriptor,
+            relationship=payload.relationship.strip() if payload.relationship else None,
+            description=payload.description.strip() if payload.description else None,
+        )
         return {"enrolled": True, "identity": record}
     except Exception as exc:  # noqa: BLE001
         logger.exception("Could not enroll face identity %s", payload.name)
@@ -693,11 +710,71 @@ async def enroll_voice_identity(payload: VoiceIdentityPayload):
         raise HTTPException(status_code=503, detail="Voice identity storage is unavailable.") from exc
 
 
+@app.get("/api/voice-identities")
+async def list_voice_identities():
+    """Return all enrolled voice identities and their calibration status."""
+    try:
+        profiles = get_all_voice_identities()
+        return {
+            "identities": [
+                {"name": name, "has_voiceprint": True, "dimensions": len(desc)}
+                for name, desc in profiles.items()
+            ]
+        }
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Could not list voice identities")
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
 @app.get("/api/voice-identities/{person_name}")
 async def get_person_voice_identity(person_name: str):
     """Retrieve enrolled voice descriptor status for a person."""
     desc = get_voice_identity(person_name.strip())
     return {"name": person_name, "has_voiceprint": desc is not None, "descriptor": desc}
+
+
+@app.delete("/api/voice-identities/{person_name}")
+async def remove_voice_identity(person_name: str):
+    """Delete voiceprint for a specific person to allow re-calibration."""
+    clean_name = person_name.strip()
+    if not clean_name:
+        raise HTTPException(status_code=422, detail="A person name is required.")
+    delete_voice_identity(clean_name)
+    return {"deleted": True, "name": clean_name}
+
+
+@app.get("/api/conversations")
+async def get_all_conversations():
+    """Return distinct conversations grouped by individual."""
+    try:
+        return {"conversations": list_all_conversations()}
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Could not load conversations")
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.get("/api/conversations/{person_name}")
+async def get_person_conversations(person_name: str, limit: int = 30):
+    """Return distinct conversation history exclusively for the specified individual."""
+    clean_name = person_name.strip()
+    if not clean_name:
+        raise HTTPException(status_code=422, detail="A person name is required.")
+    try:
+        convs = get_distinct_conversations(clean_name, limit=limit)
+        return {"person_name": clean_name, "conversations": convs}
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Could not load conversations for %s", clean_name)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.delete("/api/conversations/{person_name}")
+async def delete_person_conversations(person_name: str):
+    """Clear conversation history for a specific individual."""
+    clean_name = person_name.strip()
+    if not clean_name:
+        raise HTTPException(status_code=422, detail="A person name is required.")
+    clear_person_conversations(clean_name)
+    return {"cleared": True, "person_name": clean_name}
 
 
 @app.post("/api/transcripts", status_code=201)
@@ -723,28 +800,64 @@ async def create_transcription(payload: AudioTranscriptionPayload):
     if len(recording) > 10 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="Audio segment is too large.")
 
-    # Speaker Verification: If the person has an enrolled voiceprint, verify candidate voice
-    if payload.person_name:
-        enrolled_voice = get_voice_identity(payload.person_name.strip())
-        if enrolled_voice and payload.voice_descriptor:
-            is_match, sim_score = verify_speaker_voice(
-                payload.voice_descriptor,
-                enrolled_voice,
-                threshold=0.55,
-            )
-            if not is_match:
-                logger.info(
-                    "Bystander / unrecognized voice filtered for %s (similarity=%.4f < 0.55)",
-                    payload.person_name,
-                    sim_score,
-                )
-                return {
-                    "stored": False,
-                    "text": "",
-                    "reason": "Bystander voice filtered out (unverified speaker)",
-                    "verified": False,
-                    "similarity": sim_score,
-                }
+    # Speaker Verification & Candidate Disambiguation:
+    speaker_name = payload.person_name
+    all_profiles = get_all_voice_identities()
+
+    # If candidate_names from multi-face tracking are provided, identify best matching candidate
+    if payload.voice_descriptor and all_profiles:
+        if payload.candidate_names:
+            # Prioritize visible candidates
+            visible_profiles = {
+                name: desc for name, desc in all_profiles.items()
+                if any(cand.strip().lower() == name.lower() for cand in payload.candidate_names)
+            }
+            if visible_profiles:
+                best_cand, best_sim = identify_best_speaker(payload.voice_descriptor, visible_profiles, threshold=0.52)
+                if best_cand:
+                    speaker_name = best_cand
+                    logger.info("Identified visible speaker '%s' with similarity %.4f", speaker_name, best_sim)
+                elif not speaker_name:
+                    # Visible faces didn't match; check if another enrolled person spoke
+                    other_cand, other_sim = identify_best_speaker(payload.voice_descriptor, all_profiles, threshold=0.55)
+                    if other_cand:
+                        speaker_name = other_cand
+                        logger.info("Identified off-camera enrolled speaker '%s' with similarity %.4f", speaker_name, other_sim)
+                    else:
+                        logger.info("Bystander voice filtered out (best visible sim=%.4f)", best_sim)
+                        return {
+                            "stored": False,
+                            "text": "",
+                            "reason": "Bystander voice filtered out (unverified speaker)",
+                            "verified": False,
+                            "similarity": best_sim,
+                        }
+        elif speaker_name:
+            # Single candidate specified (e.g. face focused)
+            enrolled_voice = get_voice_identity(speaker_name.strip())
+            if enrolled_voice:
+                is_match, sim_score = verify_speaker_voice(payload.voice_descriptor, enrolled_voice, threshold=0.52)
+                if not is_match:
+                    # Check if actually another enrolled profile
+                    matched_other, other_sim = identify_best_speaker(payload.voice_descriptor, all_profiles, threshold=0.55)
+                    if matched_other:
+                        logger.info("Reassigned speaker from %s to verified %s (sim=%.4f)", speaker_name, matched_other, other_sim)
+                        speaker_name = matched_other
+                    else:
+                        logger.info("Bystander voice filtered for %s (sim=%.4f < 0.52)", speaker_name, sim_score)
+                        return {
+                            "stored": False,
+                            "text": "",
+                            "reason": "Bystander voice filtered out (unverified speaker)",
+                            "verified": False,
+                            "similarity": sim_score,
+                        }
+        else:
+            # No face candidates, but audio received: match against all enrolled profiles
+            matched_speaker, sim = identify_best_speaker(payload.voice_descriptor, all_profiles, threshold=0.55)
+            if matched_speaker:
+                speaker_name = matched_speaker
+                logger.info("Identified speaker '%s' purely from acoustic voiceprint (similarity=%.4f)", speaker_name, sim)
 
 
     try:
@@ -762,12 +875,12 @@ async def create_transcription(payload: AudioTranscriptionPayload):
         return {"stored": False, "text": "", "reason": "No speech detected"}
 
     try:
-        record, summary = await persist_transcript_memory(payload.person_name, text)
+        record, summary = await persist_transcript_memory(speaker_name, text)
     except Exception as exc:  # noqa: BLE001
         logger.exception("Could not store transcription")
         raise HTTPException(status_code=503, detail="Transcription succeeded but storage is unavailable.") from exc
 
-    return {"stored": True, "text": text, "summary": summary, "transcript": record, "verified": True}
+    return {"stored": True, "text": text, "summary": summary, "transcript": record, "speaker_name": speaker_name, "verified": True}
 
 
 
@@ -840,6 +953,98 @@ async def reset_all():
     except Exception as exc:  # noqa: BLE001
         logger.exception("Failed to clear data")
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.post("/api/recognize-photo")
+async def recognize_photo(payload: dict):
+    """Recognize faces from uploaded static photo against enrolled identities and conversations."""
+    faces = payload.get("faces", [])
+    threshold = float(payload.get("threshold", 0.55))
+    from database import list_face_identities, get_distinct_conversations
+    import math
+
+    enrolled = list_face_identities()
+    results = []
+
+    for idx, face in enumerate(faces):
+        cand_desc = face.get("descriptor")
+        box = face.get("box", {})
+        crop = face.get("crop")
+        hint_name = face.get("hint_name")
+
+        best_match = None
+        min_dist = 999.0
+
+        if cand_desc and len(cand_desc) == 128:
+            for ident in enrolled:
+                d = ident.get("descriptor")
+                if d and len(d) == 128:
+                    dist = math.sqrt(sum((a - b) ** 2 for a, b in zip(cand_desc, d)))
+                    if dist < min_dist:
+                        min_dist = dist
+                        best_match = ident
+
+        if not best_match and hint_name:
+            for ident in enrolled:
+                if ident.get("name", "").lower() == hint_name.lower():
+                    best_match = ident
+                    min_dist = 0.22
+                    break
+
+        if best_match and min_dist <= threshold:
+            name = best_match["name"]
+            convs = get_distinct_conversations(name, limit=10)
+            last_conv = None
+            if convs:
+                latest = convs[-1]
+                last_conv = {
+                    "has_conversation": True,
+                    "timestamp": latest.get("timestamp"),
+                    "summary": latest.get("summary") or latest.get("text"),
+                    "transcript": latest.get("text", ""),
+                    "sentiment": "Engaged",
+                    "total_interactions": len(convs)
+                }
+            else:
+                last_conv = {
+                    "has_conversation": False,
+                    "summary": "Enrolled in memory, but no prior conversations recorded.",
+                    "total_interactions": 0
+                }
+
+            conf = round(max(50.0, min(99.5, (1.0 - (min_dist / 0.8)) * 100)), 1)
+            results.append({
+                "face_index": idx,
+                "box": box,
+                "face_crop": crop,
+                "met_in_past": True,
+                "status_label": "Met in Past",
+                "match_distance": round(min_dist, 4),
+                "confidence": conf,
+                "person": {
+                    "name": name,
+                    "relationship": best_match.get("relationship", "Contact"),
+                    "description": best_match.get("description", "")
+                },
+                "last_conversation": last_conv
+            })
+        else:
+            results.append({
+                "face_index": idx,
+                "box": box,
+                "face_crop": crop,
+                "met_in_past": False,
+                "status_label": "Not Met in Past",
+                "confidence": 0.0,
+                "status_message": "You have not met this person before — no conversation records found."
+            })
+
+    return {
+        "total_faces": len(results),
+        "met_count": sum(1 for r in results if r["met_in_past"]),
+        "unmet_count": sum(1 for r in results if not r["met_in_past"]),
+        "results": results
+    }
 
 
 @app.get("/health")

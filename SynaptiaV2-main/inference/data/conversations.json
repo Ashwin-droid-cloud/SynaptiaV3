@@ -1,0 +1,984 @@
+{
+  "ashwin": [
+    {
+      "id": "conv_1789466701352_477f9c",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 I am enrolled now I am a Swin.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-15T10:05:01.352692"
+    },
+    {
+      "id": "conv_1789466703270_8e2645",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 I am enrolled now I am a Swin.",
+      "summary": "\u2022 Enrolled currently\n\u2022 Identifies as a Swin",
+      "voice_verified": true,
+      "timestamp": "2026-09-15T10:05:03.270608"
+    },
+    {
+      "id": "conv_1789466717901_24c2cb",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 I identify as a straight guy.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-15T10:05:17.901152"
+    },
+    {
+      "id": "conv_1789466719115_73e820",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 I identify as a straight guy.",
+      "summary": "\u2022 Ashwin is a Swin student\n\u2022 He identifies as straight",
+      "voice_verified": true,
+      "timestamp": "2026-09-15T10:05:19.115879"
+    },
+    {
+      "id": "conv_1789466723124_3e8b2a",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Wait!",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-15T10:05:23.124870"
+    },
+    {
+      "id": "conv_1789466724152_592e82",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Wait!",
+      "summary": "\u2022 Ashwin is a Swin student\n\u2022 He identifies as straight",
+      "voice_verified": true,
+      "timestamp": "2026-09-15T10:05:24.152934"
+    },
+    {
+      "id": "conv_1789534369285_a283df",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Hahaha.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T04:52:49.285031"
+    },
+    {
+      "id": "conv_1789534370155_399f3b",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Hahaha.",
+      "summary": "\u2022 Ashwin is a Swin student\n\u2022 He identifies as straight",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T04:52:50.155987"
+    },
+    {
+      "id": "conv_1789534478883_d96ec5",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 I'm going to go to the next slide.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T04:54:38.883919"
+    },
+    {
+      "id": "conv_1789534480107_57be65",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 I'm going to go to the next slide.",
+      "summary": "\u2022 Ashwin is a Swin student\n\u2022 He identifies as straight",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T04:54:40.107934"
+    },
+    {
+      "id": "conv_1789538572567_ac172d",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 We both went to supermarket yesterday.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:02:52.567236"
+    },
+    {
+      "id": "conv_1789538573789_128230",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 We both went to supermarket yesterday.",
+      "summary": "\u2022 Ashwin is a Swin student\n\u2022 He identifies as straight\n\u2022 Went to supermarket yesterday",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:02:53.789230"
+    },
+    {
+      "id": "conv_1789538575689_3a62c4",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Dread, they will look at it.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:02:55.689287"
+    },
+    {
+      "id": "conv_1789538577076_6d9248",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Dread, they will look at it.",
+      "summary": "\u2022 Ashwin, Swin student, straight, went to supermarket yesterday.\n\u2022 He feels dread about being looked at.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:02:57.076494"
+    },
+    {
+      "id": "conv_1789538595573_b8a494",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Tomorrow we need to go together to the book lab.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:03:15.573712"
+    },
+    {
+      "id": "conv_1789538597141_938288",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Tomorrow we need to go together to the book lab.",
+      "summary": "\u2022 Ashwin, Swin student, feels dread about being looked at.\n\u2022 Tomorrow they will go together to the book lab.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:03:17.141142"
+    },
+    {
+      "id": "conv_1789538633284_bb93bc",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 If you have a patient, you will have metaglasses. \u2022 Just like someone else, you will tell them. \u2022 Katu, you have to do it.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:03:53.284303"
+    },
+    {
+      "id": "conv_1789538634835_081a70",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 If you have a patient, you will have metaglasses. \u2022 Just like someone else, you will tell them. \u2022 Katu, you have to do it.",
+      "summary": "\u2022 Ashwin, Swin student, feels dread about being looked at.\n\u2022 They will go together to the book lab tomorrow.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:03:54.835108"
+    },
+    {
+      "id": "conv_1789538636940_b1376d",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Forget me not.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:03:56.940909"
+    },
+    {
+      "id": "conv_1789538638617_0b46f3",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Forget me not.",
+      "summary": "\u2022 Ashwin, Swin student, feels dread about being looked at\n\u2022 Will go together to the book lab tomorrow\n\u2022 Wants to be remembered (\u201cForget me not\u201d)",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:03:58.617308"
+    },
+    {
+      "id": "conv_1789538645179_5ebeab",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Please take me.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:04:05.179219"
+    },
+    {
+      "id": "conv_1789538646672_d7fabf",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Please take me.",
+      "summary": "\u2022 Ashwin, Swin student, feels dread about being watched\n\u2022 Wants to be remembered (\u201cForget me not\u201d)\n\u2022 Asked to be taken to the book lab tomorrow",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:04:06.672204"
+    },
+    {
+      "id": "conv_1789538742133_fc3d3e",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Rhythm has written that me and Rhythm met at supermarket yesterday.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:05:42.133599"
+    },
+    {
+      "id": "conv_1789538743377_825cd3",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Rhythm has written that me and Rhythm met at supermarket yesterday.",
+      "summary": "\u2022 Ashwin, Swin student, fears being watched, wants \u201cForget me not\u201d\n\u2022 Requested book lab visit tomorrow\n\u2022 Met Rhythm at supermarket yesterday",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:05:43.377134"
+    },
+    {
+      "id": "conv_1789538750852_9789d7",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Hey guys, what you doing? \u2022 What you are doing?",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:05:50.852774"
+    },
+    {
+      "id": "conv_1789538752184_2801e7",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Hey guys, what you doing? \u2022 What you are doing?",
+      "summary": "\u2022 Ashwin, Swin student, fears being watched, wants \u201cForget me not\u201d\n\u2022 Requested book lab visit tomorrow\n\u2022 Met Rhythm at supermarket yesterday",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:05:52.184987"
+    },
+    {
+      "id": "conv_1789538993445_5a9412",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 So I was talking about that issue that was running along.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:09:53.445941"
+    },
+    {
+      "id": "conv_1789538994758_7e76e5",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 So I was talking about that issue that was running along.",
+      "summary": "\u2022 Ashwin, Swin student, fears being watched, wants \u201cForget me not\u201d\n\u2022 Requested book lab visit tomorrow\n\u2022 Met Rhythm at supermarket yesterday",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:09:54.758963"
+    },
+    {
+      "id": "conv_1789538996698_9929ff",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 We got that thing in supermarket yesterday.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:09:56.698002"
+    },
+    {
+      "id": "conv_1789538998556_199dcc",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 We got that thing in supermarket yesterday.",
+      "summary": "\u2022 Ashwin, Swin student, fears being watched, wants \u201cForget me not\u201d\n\u2022 Met Rhythm and got item in supermarket yesterday\n\u2022 Requested book lab visit tomorrow",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:09:58.556092"
+    },
+    {
+      "id": "conv_1789539001530_c0f2a8",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 The voice was...I guess the voice is verified. \u2022 Now...",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:10:01.530702"
+    },
+    {
+      "id": "conv_1789539003031_493c21",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 The voice was...I guess the voice is verified. \u2022 Now...",
+      "summary": "\u2022 Ashwin, Swin student, fears being watched, wants \u201cForget me not\u201d\n\u2022 Met Rhythm, received supermarket item yesterday; plans book lab visit tomorrow\n\u2022 Voice verification confirmed",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:10:03.031188"
+    },
+    {
+      "id": "conv_1789539005814_160eae",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Let's see whether you are able to write it or not.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:10:05.814435"
+    },
+    {
+      "id": "conv_1789539007736_37fe45",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Let's see whether you are able to write it or not.",
+      "summary": "\u2022 Ashwin, Swin student, fears being watched, wants \u201cForget me not\u201d.\n\u2022 Met Rhythm, got supermarket item; plans lab visit tomorrow.\n\u2022 Asked to write something (challenge).",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:10:07.736489"
+    },
+    {
+      "id": "conv_1789539013718_37e867",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 What if I try to come in between, will you be able to recognize me? \u2022 We met at the supermarket yesterday.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:10:13.718045"
+    },
+    {
+      "id": "conv_1789539016148_05289b",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 What if I try to come in between, will you be able to recognize me? \u2022 We met at the supermarket yesterday.",
+      "summary": "\u2022 Ashwin, Swin student, fears being watched, \u201cForget me not\u201d, met Rhythm at supermarket yesterday.\n\u2022 Plans lab visit tomorrow; asks if he'll be recognized when intervening.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:10:16.148581"
+    },
+    {
+      "id": "conv_1789539040623_5d4f7d",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 For that, it would just randomly pick one person.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:10:40.623910"
+    },
+    {
+      "id": "conv_1789539042394_bee764",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 For that, it would just randomly pick one person.",
+      "summary": "\u2022 Ashwin, Swin student, fears being watched, met Rhythm at supermarket.\n\u2022 Lab visit tomorrow; worries he'll be recognized when intervening.\n\u2022 Selection would be random.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:10:42.394094"
+    },
+    {
+      "id": "conv_1789539048161_eddd7f",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Randomly pick one person, voice verified Ashwin, okay, then this would write in Ashwin.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:10:48.161019"
+    },
+    {
+      "id": "conv_1789539049850_067b2f",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Randomly pick one person, voice verified Ashwin, okay, then this would write in Ashwin.",
+      "summary": "\u2022 Ashwin, Swin student, fears being watched; met Rhythm at supermarket.\n\u2022 Lab visit tomorrow; worries about being recognized while intervening.\n\u2022 Random selection voice\u2011verified as Ashwin.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:10:49.850296"
+    },
+    {
+      "id": "conv_1789539053568_de1749",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Now, let's ask. \u2022 What if I say something in between?",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:10:53.568961"
+    },
+    {
+      "id": "conv_1789539054882_ae0ec1",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Now, let's ask. \u2022 What if I say something in between?",
+      "summary": "\u2022 Ashwin, Swin student, fears being watched; met Rhythm at supermarket.\n\u2022 Lab visit tomorrow; concerned about recognition while intervening.\n\u2022 Voice\u2011verified as Ashwin.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:10:54.882409"
+    },
+    {
+      "id": "conv_1789539057881_3ad4b5",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 What if I say something in between, will it be able to distinguish?",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:10:57.881805"
+    },
+    {
+      "id": "conv_1789539060867_fb8f15",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 What if I say something in between, will it be able to distinguish?",
+      "summary": "\u2022 Ashwin, Swin student, voice\u2011verified, fears being watched; lab visit tomorrow, worries system recognizing him while intervening.\n\u2022 Asks if system can tell his speech when interjecting.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:11:00.867869"
+    },
+    {
+      "id": "conv_1789539135992_99a9a8",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 It's a great thing. \u2022 It's a good thing.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:12:15.992072"
+    },
+    {
+      "id": "conv_1789539138764_5867f5",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 It's a great thing. \u2022 It's a good thing.",
+      "summary": "\u2022 Ashwin, Swin student, fears being watched; lab visit tomorrow, worries system recognizing him.\n\u2022 Asked if system can repeat his speech when interjecting; said it\u2019s good.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:12:18.764599"
+    },
+    {
+      "id": "conv_1789539218009_8cc67d",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 How many users are interested in it? \u2022 They are interested in it. \u2022 In the EIT, they were integrated in the EIT.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:13:38.009701"
+    },
+    {
+      "id": "conv_1789539220362_0a430e",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 How many users are interested in it? \u2022 They are interested in it. \u2022 In the EIT, they were integrated in the EIT.",
+      "summary": "\u2022 Ashwin, Swin student, fears being watched; lab visit tomorrow, worries system recognition; likes speech repeat.\n\u2022 Asked about user interest; said they\u2019re integrated in the EIT.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:13:40.362406"
+    },
+    {
+      "id": "conv_1789539237904_868c69",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 The money is going down. \u2022 Yeah, we are going down mutual funds. \u2022 I don't think it's good.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:13:57.904628"
+    },
+    {
+      "id": "conv_1789539239308_500ea9",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 The money is going down. \u2022 Yeah, we are going down mutual funds. \u2022 I don't think it's good.",
+      "summary": "\u2022 Ashwin, Swin student, fears being watched; lab visit tomorrow; likes speech repeat.\n\u2022 Integrated in the EIT; concerned about money falling, mutual funds not good.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:13:59.308680"
+    },
+    {
+      "id": "conv_1789539804062_daa1aa",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Dude, why don't push? \u2022 I'm doing it! \u2022 He's going to be serious!",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:23:24.062016"
+    },
+    {
+      "id": "conv_1789539807232_807ca4",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Dude, why don't push? \u2022 I'm doing it! \u2022 He's going to be serious!",
+      "summary": "\u2022 Ashwin, student, fears being watched; lab visit tomorrow; likes speech repeat.\n\u2022 In EIT; worries money falling, mutual funds bad; says \u201cI\u2019m doing it\u201d and seriousness.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:23:27.232462"
+    },
+    {
+      "id": "conv_1789539849745_1da1f6",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 What? \u2022 Push,",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:24:09.744995"
+    },
+    {
+      "id": "conv_1789539851436_602d44",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 What? \u2022 Push,",
+      "summary": "\u2022 Ashwin, student, fears being watched; lab visit tomorrow; likes speech repeat.\n\u2022 In EIT; worries money falling, mutual funds bad; says \u201cI\u2019m doing it\u201d seriously.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:24:11.436732"
+    },
+    {
+      "id": "conv_1789539922028_878a95",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 I was wondering what was the last time I was thinking about.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:25:22.028873"
+    },
+    {
+      "id": "conv_1789539924580_d1546b",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 I was wondering what was the last time I was thinking about.",
+      "summary": "\u2022 Ashwin, EIT student, fears watched, visit tomorrow, likes speech repeat.\n\u2022 Worried money falling, distrusts mutual funds, says \u201cI\u2019m doing it\u201d.\n\u2022 Wondered about his last thought.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:25:24.580506"
+    },
+    {
+      "id": "conv_1789539929989_10572a",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 There are connections here, but there is no connection that you don't have anything to do.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:25:29.989538"
+    },
+    {
+      "id": "conv_1789539934002_3026d0",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 There are connections here, but there is no connection that you don't have anything to do.",
+      "summary": "\u2022 Ashwin, EIT student, fears being watched; visit tomorrow.\n\u2022 Distrusts mutual funds, worries money falling, says \u201cI\u2019m doing it\u201d.\n\u2022 Says all connects, but no connection irrelevant.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:25:34.002709"
+    },
+    {
+      "id": "conv_1789539971478_174274",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 But I'm just saying, sir, we've added this feature, the camera is adjusting. \u2022 Yes, it's adjusting, sir. \u2022 But the Mac is the same, sir.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:26:11.478110"
+    },
+    {
+      "id": "conv_1789539973146_11e93b",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 But I'm just saying, sir, we've added this feature, the camera is adjusting. \u2022 Yes, it's adjusting, sir. \u2022 But the Mac is the same, sir.",
+      "summary": "\u2022 Ashwin, EIT student, fears being watched; visit tomorrow.\n\u2022 Distrusts mutual funds, worries money falling, says \u201cI\u2019m doing it\u201d.\n\u2022 Notes camera feature adjusting; mentions Mac unchanged.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:26:13.146198"
+    },
+    {
+      "id": "conv_1789540402865_3925c3",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Not high enough.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:33:22.865492"
+    },
+    {
+      "id": "conv_1789540405153_7463a7",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Not high enough.",
+      "summary": "\u2022 Ashwin fears being watched; visit tomorrow; distrusts mutual funds, worries money falling, \u201cI\u2019m doing it\u201d.\n\u2022 Camera feature adjusting, Mac unchanged; says \u201cnot high enough\u201d.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:33:25.153200"
+    },
+    {
+      "id": "conv_1789540413110_89bfdc",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Why are they not doing that in the mode? \u2022 What? \u2022 They are just for showing.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:33:33.110812"
+    },
+    {
+      "id": "conv_1789540415798_a69255",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Why are they not doing that in the mode? \u2022 What? \u2022 They are just for showing.",
+      "summary": "\u2022 Ashwin fears being watched, distrusts mutual funds, worries money, visit tomorrow.\n\u2022 Camera feature not high enough; asks why mode feature only shows, not active.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:33:35.798828"
+    },
+    {
+      "id": "conv_1789540468009_87419f",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 It's a good thing. \u2022 Let's take a look. \u2022 Yes, I'll take it.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:34:28.009629"
+    },
+    {
+      "id": "conv_1789540470632_a8479c",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 It's a good thing. \u2022 Let's take a look. \u2022 Yes, I'll take it.",
+      "summary": "\u2022 Ashwin fears being watched, distrusts mutual funds, worries about money; has a visit tomorrow.\n\u2022 Camera mode only displays, not active; he agreed to take it.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:34:30.632969"
+    },
+    {
+      "id": "conv_1789540479864_63fb95",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Where are you taking the recommendations?",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:34:39.864626"
+    },
+    {
+      "id": "conv_1789540481681_21e97a",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Where are you taking the recommendations?",
+      "summary": "\u2022 Ashwin fears being watched, distrusts mutual funds, has tomorrow's visit.\n\u2022 Camera mode displays only; he agreed to use it and asked where recommendations are taken.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:34:41.681110"
+    },
+    {
+      "id": "conv_1789540514374_14af2f",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 What is this? \u2022 Who is this? \u2022 What is Apple idea?",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:35:14.374383"
+    },
+    {
+      "id": "conv_1789540515948_a7f8e5",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 What is this? \u2022 Who is this? \u2022 What is Apple idea?",
+      "summary": "\u2022 Fears being watched, distrusts mutual funds, visit tomorrow; uses camera mode, asked source of recommendations\n\u2022 Queries: \u201cWhat is this?\u201d, \u201cWho is this?\u201d, \u201cApple idea\u201d",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:35:15.948351"
+    },
+    {
+      "id": "conv_1789540548927_d0d193",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 We will put it on a jury round house. \u2022 It's two days. \u2022 Leave it.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:35:48.927129"
+    },
+    {
+      "id": "conv_1789540551378_0030fe",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 We will put it on a jury round house. \u2022 It's two days. \u2022 Leave it.",
+      "summary": "\u2022 Fears being watched, distrusts mutual funds; visit tomorrow, uses camera mode, asks \u201cWhat/Who is this?\u201d, Apple idea\n\u2022 Plans jury round house for days, leave",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:35:51.378221"
+    },
+    {
+      "id": "conv_1789540654165_1535ad",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Okay, now I'm going to keep my daughter. \u2022 She's doing it.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:37:34.165422"
+    },
+    {
+      "id": "conv_1789540656945_808e2e",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Okay, now I'm going to keep my daughter. \u2022 She's doing it.",
+      "summary": "\u2022 Fears being watched, distrusts funds; visit tomorrow, uses camera mode, asks \u201cWhat/Who is this?\u201d, Apple idea\n\u2022 Jury house days, will leave\n\u2022 Keeping daughter, she\u2019s involved",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:37:36.945797"
+    },
+    {
+      "id": "conv_1789540657130_918d1d",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Now we have upload.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:37:37.130363"
+    },
+    {
+      "id": "conv_1789540659402_80cb71",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Now we have upload.",
+      "summary": "\u2022 Ashwin fears surveillance, distrusts funds; tomorrow camera visit, asks \u201cWhat/Who is this?\u201d\n\u2022 Jury house ending, will leave; caring for daughter; now has upload",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:37:39.402842"
+    },
+    {
+      "id": "conv_1789540711328_e71549",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 It's a little bit more.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:38:31.328433"
+    },
+    {
+      "id": "conv_1789540715030_12f134",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 It's a little bit more.",
+      "summary": "\u2022 Ashwin fears surveillance, distrusts funds; tomorrow camera visit, asks \u201cWhat/Who is this?\u201d\n\u2022 Jury house ending, will leave; caring for daughter; has upload, a little more",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:38:35.030528"
+    },
+    {
+      "id": "conv_1789540729634_261594",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 I have to find this manually. \u2022 This is a cut off. \u2022 We both met at the supermarket yesterday.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:38:49.634090"
+    },
+    {
+      "id": "conv_1789540731510_ad98c1",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 I have to find this manually. \u2022 This is a cut off. \u2022 We both met at the supermarket yesterday.",
+      "summary": "\u2022 Fears surveillance, distrusts funds; camera visit tomorrow, asks \u201cWhat/Who is this?\u201d\n\u2022 Jury house ending, will leave; caring for daughter; has upload.\n\u2022 Met at supermarket yesterday.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:38:51.510536"
+    },
+    {
+      "id": "conv_1789540784338_cf662e",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Cloud.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:39:44.338304"
+    },
+    {
+      "id": "conv_1789540786059_b2d05f",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Cloud.",
+      "summary": "\u2022 Fears surveillance, distrusts funds; camera visit scheduled tomorrow\n\u2022 Jury house ending; caring for daughter; has upload\n\u2022 Mentioned \u201cCloud\u201d",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:39:46.059121"
+    },
+    {
+      "id": "conv_1789540841994_97e318",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Mentally.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:40:41.994322"
+    },
+    {
+      "id": "conv_1789540843606_972473",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 Mentally.",
+      "summary": "\u2022 Fears surveillance, distrusts funds; camera visit tomorrow\n\u2022 Jury house ending, caring for daughter, has upload, mentioned Cloud\n\u2022 Mentally concerned",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:40:43.606401"
+    },
+    {
+      "id": "conv_1789540978760_cf18dd",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 This is the final round. \u2022 What is this? \u2022 You don't have to do the final round.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:42:58.760253"
+    },
+    {
+      "id": "conv_1789540980620_5b39a4",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 This is the final round. \u2022 What is this? \u2022 You don't have to do the final round.",
+      "summary": "\u2022 Fears surveillance, distrusts funds; camera visit tomorrow\n\u2022 Jury house ending, caring for daughter, mentions Cloud; concerned\n\u2022 Final round mentioned, unsure if must participate",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:43:00.620149"
+    },
+    {
+      "id": "conv_1789541013355_a5d109",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 The",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:43:33.355431"
+    },
+    {
+      "id": "conv_1789541015687_04327d",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 The",
+      "summary": "\u2022 Fears surveillance, distrusts funds; camera visit tomorrow\n\u2022 Jury house ending, caring for daughter, mentions Cloud; concerned\n\u2022 Final round mentioned, unsure if must participate",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:43:35.687943"
+    },
+    {
+      "id": "conv_1789541810004_c545f0",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 So how are you? \u2022 I'm Ashun Srivastava. \u2022 What you thinking?",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:56:50.004423"
+    },
+    {
+      "id": "conv_1789541811803_61c051",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 So how are you? \u2022 I'm Ashun Srivastava. \u2022 What you thinking?",
+      "summary": "\u2022 Ashwin Srivastava fears surveillance, distrusts funds; camera visit scheduled tomorrow.\n\u2022 Jury house ending, caring for daughter, mentions Cloud; uncertain about final round participation.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:56:51.803962"
+    },
+    {
+      "id": "conv_1789541901759_57ac6b",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 We have to eat the same thing.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:58:21.759499"
+    },
+    {
+      "id": "conv_1789541903388_68de18",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 We have to eat the same thing.",
+      "summary": "\u2022 Ashwin fears surveillance, distrusts funds; camera visit tomorrow.\n\u2022 Jury house ending; cares for daughter, mentions Cloud; unsure about final round.\n\u2022 Must eat the same food.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:58:23.388145"
+    },
+    {
+      "id": "conv_1789542076864_33e2fd",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 What is the rhythm? \u2022 No, \u2022 It's your style.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T07:01:16.864723"
+    },
+    {
+      "id": "conv_1789542079944_4c1662",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 What is the rhythm? \u2022 No, \u2022 It's your style.",
+      "summary": "\u2022 Ashwin fears surveillance; camera visit tomorrow.\n\u2022 Jury house ending; cares for daughter, mentions Cloud; unsure about round.\n\u2022 Talked about rhythm and style; eats same food.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T07:01:19.944645"
+    },
+    {
+      "id": "conv_1789542097396_edf9f9",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 This is my info.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T07:01:37.396029"
+    },
+    {
+      "id": "conv_1789542098588_cb247e",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 This is my info.",
+      "summary": "\u2022 Ashwin fears surveillance; camera visit tomorrow.\n\u2022 Jury house ending; cares for daughter, mentions Cloud; unsure about round.\n\u2022 Talked about rhythm and style; eats same food.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T07:01:38.588801"
+    },
+    {
+      "id": "conv_1789542165676_368835",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 How are you doing this? \u2022 No. \u2022 Are you pushing this?",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T07:02:45.676062"
+    },
+    {
+      "id": "conv_1789542167424_24bcc3",
+      "person_name": "ashwin",
+      "speaker": "ashwin",
+      "text": "\u2022 How are you doing this? \u2022 No. \u2022 Are you pushing this?",
+      "summary": "\u2022 Ashwin fears surveillance; camera visit tomorrow.\n\u2022 Jury house ending; cares for daughter, mentions Cloud; uncertain round.\n\u2022 Talked about rhythm and style; eats same food.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T07:02:47.424586"
+    }
+  ],
+  "rhythm": [
+    {
+      "id": "conv_1789466755609_495eab",
+      "person_name": "Rhythm",
+      "speaker": "Rhythm",
+      "text": "\u2022 Both met at the supermarket yesterday.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-15T10:05:55.609884"
+    },
+    {
+      "id": "conv_1789466756430_2c6a47",
+      "person_name": "Rhythm",
+      "speaker": "Rhythm",
+      "text": "\u2022 Both met at the supermarket yesterday.",
+      "summary": "\u2022 Met Rhythm at supermarket yesterday",
+      "voice_verified": true,
+      "timestamp": "2026-09-15T10:05:56.430457"
+    }
+  ],
+  "alice": [
+    {
+      "id": "conv_1789536644771_8cd10c",
+      "person_name": "Alice",
+      "speaker": "Alice",
+      "text": "Remember to take your medicine at 2pm",
+      "summary": "Take medicine 2pm",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T05:30:44.771634"
+    }
+  ],
+  "bob": [
+    {
+      "id": "conv_1789536644771_634a0c",
+      "person_name": "Bob",
+      "speaker": "Bob",
+      "text": "Your appointment is scheduled for Friday",
+      "summary": "Appointment Friday",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T05:30:44.771745"
+    }
+  ],
+  "aditya": [
+    {
+      "id": "conv_1789539024932_b413a9",
+      "person_name": "Aditya",
+      "speaker": "Aditya",
+      "text": "\u2022 Hi, hello, \u2022 Can you recognize me?",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:10:24.932432"
+    },
+    {
+      "id": "conv_1789539025907_7bf149",
+      "person_name": "Aditya",
+      "speaker": "Aditya",
+      "text": "\u2022 Hi, hello, \u2022 Can you recognize me?",
+      "summary": "\u2022 Hi, hello,\n\u2022 Can you recognize me?",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:10:25.907542"
+    },
+    {
+      "id": "conv_1789540016024_d48d16",
+      "person_name": "Aditya",
+      "speaker": "Aditya",
+      "text": "\u2022 Why are you taking the picture? \u2022 He's saying it on the registry. \u2022 It's like a doctor.",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:26:56.024151"
+    },
+    {
+      "id": "conv_1789540017867_c3c5cb",
+      "person_name": "Aditya",
+      "speaker": "Aditya",
+      "text": "\u2022 Why are you taking the picture? \u2022 He's saying it on the registry. \u2022 It's like a doctor.",
+      "summary": "\u2022 Aditya introduced himself, asked assistant to recognize him, and questioned why a picture was taken.\n\u2022 He mentioned a registry and likened it to a doctor.",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:26:57.867660"
+    },
+    {
+      "id": "conv_1789541923550_aec58c",
+      "person_name": "Aditya",
+      "speaker": "Aditya",
+      "text": "\u2022 All specific things. \u2022 Enrollment error?",
+      "summary": null,
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:58:43.550771"
+    },
+    {
+      "id": "conv_1789541925100_f126ea",
+      "person_name": "Aditya",
+      "speaker": "Aditya",
+      "text": "\u2022 All specific things. \u2022 Enrollment error?",
+      "summary": "\u2022 Aditya introduced himself, wants recognition, asked about picture, likened registry to doctor\n\u2022 Now reports an enrollment error",
+      "voice_verified": true,
+      "timestamp": "2026-09-16T06:58:45.100625"
+    }
+  ]
+}

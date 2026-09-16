@@ -1066,12 +1066,37 @@
                     <div class="v2-portal-title-group">
                         <div class="v2-pill-tag">
                             <span class="v2-pulse-dot"></span>
-                            <span>SYNAPTIA V2.0 LIVE ENVIRONMENT</span>
+                            <span>SYNAPTIA V2.0 MULTIMODAL MEMORY</span>
                         </div>
                         <h2 class="v2-portal-title">Multimodal Vision & Memory Engine</h2>
-                        <p class="v2-portal-sub">Real-time WebRTC face tracking, speech diarization, and Ray-Ban smart glass HUD interface.</p>
+                        <p class="v2-portal-sub">Real-time WebRTC face tracking, speech diarization, and photo perceptual memory recall.</p>
                     </div>
                     <div class="v2-portal-actions">
+                        <div class="v2-subtabs-nav" id="v2SubtabsNav">
+                            <button class="v2-subtab-btn active" id="subtabBtnLiveStream" onclick="switchV2Subtab('live-stream')">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M23 7l-7 5 7 5V7z"/>
+                                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                                </svg>
+                                <span>Live AR Glass Stream</span>
+                            </button>
+                            <button class="v2-subtab-btn" id="subtabBtnPhotoRecall" onclick="switchV2Subtab('photo-recall')">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                    <polyline points="21 15 16 10 5 21"/>
+                                </svg>
+                                <span>Photo Memory Recall</span>
+                            </button>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" onclick="reloadV2AppFrame()" title="Reload AR Stream">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"/>
+                                <polyline points="1 20 1 14 7 14"/>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                            </svg>
+                            <span>Reload Stream</span>
+                        </button>
                         <a href="http://localhost:3000" target="_blank" rel="noopener noreferrer" class="btn btn-hero btn-sm">
                             <span>Open in Fullscreen</span>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1083,8 +1108,143 @@
                     </div>
                 </div>
 
-                <div class="v2-frame-wrapper glass-panel">
-                    <iframe id="v2AppFrame" data-src="http://localhost:3000" class="v2-app-frame" allow="camera; microphone; display-capture; autoplay" title="Synaptia V2 Multimodal Vision"></iframe>
+                <!-- ── TAB 1: LIVE AR GLASS STREAM ── -->
+                <div class="v2-tab-content active" id="v2TabLiveStream">
+                    <div class="v2-frame-wrapper glass-panel">
+                        <iframe id="v2AppFrame" src="http://localhost:3000" data-src="http://localhost:3000" class="v2-app-frame" allow="camera *; microphone *; display-capture *; autoplay *" title="Synaptia V2 Multimodal Vision"></iframe>
+                    </div>
+                </div>
+
+                <!-- ── TAB 2: PHOTO MEMORY RECALL STUDIO ── -->
+                <div class="v2-tab-content" id="v2TabPhotoRecall">
+                    <div class="photo-recall-studio">
+                        <!-- Clean Photo Section Toolbar with Add New Person feature -->
+                        <div class="photo-toolbar glass-panel">
+                            <div class="photo-toolbar-info">
+                                <div class="photo-toolbar-badge">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                        <polyline points="21 15 16 10 5 21"/>
+                                    </svg>
+                                    <span>Perceptual Memory Recall</span>
+                                </div>
+                                <span class="photo-toolbar-desc">Upload a photograph to recall past dialogues, or register a new person into memory.</span>
+                            </div>
+                            <div class="photo-toolbar-actions">
+                                <button class="btn-enroll-action" id="btnAddNewPersonPhoto" onclick="openManualEnrollModal()" title="Add a new person to memory">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    <span>Add New Person</span>
+                                </button>
+                                <button class="btn-upload-action" onclick="triggerPhotoUpload()" title="Choose an image file from your computer">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                    <span>Upload Photo</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 2-Column Inspector Layout -->
+                        <div class="photo-inspector-grid">
+                            <!-- Left: Upload Area & Canvas -->
+                            <div class="photo-stage-column">
+                                <div class="dropzone-card glass-panel" id="photoDropzone" onclick="triggerPhotoUpload()">
+                                    <input type="file" id="photoFileInput" accept="image/*" class="hidden" onchange="handlePhotoFileSelected(event)">
+                                    <div class="dropzone-content" id="dropzonePrompt">
+                                        <div class="dropzone-icon-ring">
+                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                <polyline points="17 8 12 3 7 8"/>
+                                                <line x1="12" y1="3" x2="12" y2="15"/>
+                                            </svg>
+                                        </div>
+                                        <h3 class="dropzone-title">Upload a Static Photo</h3>
+                                        <p class="dropzone-sub">Drag and drop any photograph here, or <span class="dropzone-highlight">browse files</span></p>
+                                        <div class="dropzone-badges">
+                                            <span class="dropzone-badge">JPG, PNG, WEBP</span>
+                                            <span class="dropzone-badge">Multi-Person Detection</span>
+                                            <span class="dropzone-badge">⌘V to Paste</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Photo Canvas Preview with Interactive Bounding Boxes -->
+                                <div class="canvas-viewer-card glass-panel hidden" id="canvasViewerCard">
+                                    <div class="viewer-toolbar">
+                                        <div class="viewer-status-wrap">
+                                            <span class="status-indicator-dot" id="viewerStatusDot"></span>
+                                            <span class="viewer-status-text" id="viewerStatusText">Ready</span>
+                                        </div>
+                                        <div class="viewer-actions">
+                                            <button class="btn btn-ghost btn-xs" onclick="triggerPhotoUpload()" title="Upload a different photo">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                    <polyline points="17 8 12 3 7 8"/>
+                                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                                </svg>
+                                                <span>New Photo</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="canvas-stage-wrapper" id="canvasStageWrapper">
+                                        <img id="photoTargetImage" crossOrigin="anonymous" class="target-img hidden" alt="Inspection target" />
+                                        <canvas id="photoOverlayCanvas" class="overlay-canvas"></canvas>
+                                        <div class="scan-laser hidden" id="photoScanLaser"></div>
+                                    </div>
+
+                                    <div class="viewer-tip">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <line x1="12" y1="16" x2="12" y2="12"/>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                        </svg>
+                                        <span>Click or hover over any face box to inspect their profile and past conversation.</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right: Memory Recall & Past Conversation Results -->
+                            <div class="photo-results-column">
+                                <div class="results-panel glass-panel" id="resultsPanel">
+                                    <div class="results-header">
+                                        <div class="results-header-title">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                                <circle cx="12" cy="7" r="4"></circle>
+                                            </svg>
+                                            <h3>Perceptual Memory Recall</h3>
+                                        </div>
+                                        <div class="results-counter-pill hidden" id="resultsCounterPill">
+                                            <span id="resultsCounterText">0 Detected</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Placeholder when empty -->
+                                    <div class="results-empty-state" id="resultsEmptyState">
+                                        <div class="empty-state-icon">
+                                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                            </svg>
+                                        </div>
+                                        <h4>No Photo Analyzed Yet</h4>
+                                        <p>Upload a photograph or click any test preset on the left to detect faces, identify who they are, and recall your last conversation with them.</p>
+                                    </div>
+
+                                    <!-- Active Detection Cards List -->
+                                    <div class="face-cards-list hidden" id="faceCardsList"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1125,9 +1285,85 @@
         </div>
     </div>
 
+    <!-- Photo Memory Enrollment Modal -->
+    <div id="photoEnrollModal" class="modal-overlay hidden" onclick="handleEnrollModalOverlayClick(event)">
+        <div class="modal-card enroll-modal-card">
+            <button class="modal-close" onclick="closeEnrollModal()" aria-label="Close">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+            </button>
+            <div class="enroll-modal-header">
+                <div class="enroll-avatar-preview-wrap" onclick="triggerAvatarUpload()" title="Click to select or upload portrait photo">
+                    <img id="enrollAvatarPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" alt="Person portrait" class="enroll-avatar-preview">
+                    <input type="file" id="enrollAvatarFileInput" accept="image/*" class="hidden" onchange="handleEnrollAvatarFile(event)">
+                    <div class="enroll-avatar-badge" id="enrollAvatarBadge">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                            <circle cx="12" cy="13" r="4"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="enroll-header-text">
+                    <h2 class="enroll-modal-title" id="enrollModalTitle">Add New Person</h2>
+                    <p class="enroll-modal-sub" id="enrollModalSub">Enter profile details to register this individual into your perceptual memory store.</p>
+                </div>
+            </div>
+
+            <form id="photoEnrollForm" onsubmit="handleEnrollSubmit(event)" class="enroll-form">
+                <input type="hidden" id="enrollFaceCropInput">
+                <input type="hidden" id="enrollDescriptorInput">
+                <input type="hidden" id="enrollSourceInput" value="manual">
+
+                <div class="form-group">
+                    <label for="enrollNameInput" class="form-label">Full Name <span class="required-star">*</span></label>
+                    <input type="text" id="enrollNameInput" class="form-input" placeholder="e.g., Jane Doe" required autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label for="enrollRelationshipInput" class="form-label">Relationship / Role</label>
+                    <div class="relation-select-wrap">
+                        <select id="enrollRelationshipInput" class="form-select">
+                            <option value="Family">Family</option>
+                            <option value="Daughter">Daughter</option>
+                            <option value="Son">Son</option>
+                            <option value="Spouse">Spouse</option>
+                            <option value="Physician">Physician / Doctor</option>
+                            <option value="Caregiver">Caregiver / Nurse</option>
+                            <option value="Friend" selected>Friend</option>
+                            <option value="Colleague">Colleague / Work</option>
+                            <option value="Neighbor">Neighbor</option>
+                            <option value="Acquaintance">Acquaintance</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="enrollInitialNoteInput" class="form-label">Initial Conversation or Context Notes</label>
+                    <textarea id="enrollInitialNoteInput" class="form-textarea" rows="3" placeholder="e.g., Met at local community gathering. Discussed upcoming weekend plans."></textarea>
+                </div>
+
+                <div class="enroll-modal-actions">
+                    <button type="button" class="btn-enroll-cancel" onclick="closeEnrollModal()">Cancel</button>
+                    <button type="submit" class="btn-enroll-save" id="enrollSubmitBtn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                            <polyline points="17 21 17 13 7 13 7 21"/>
+                            <polyline points="7 3 7 8 15 8"/>
+                        </svg>
+                        <span>Save Person</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div id="toastContainer" class="toast-container"></div>
 
+    <!-- Face API (TensorFlow.js face detection & 128D embeddings) -->
+    <script src="/static/vendor/face-api.min.js"></script>
     <script type="module" src="/static/script.js"></script>
 </body>
 

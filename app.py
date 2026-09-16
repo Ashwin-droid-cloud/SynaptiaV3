@@ -589,6 +589,152 @@ def v2_simulate_event():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/v2/recognize-photo", methods=["POST"])
+def v2_recognize_photo():
+    """
+    Recognize faces from an uploaded static photo and retrieve last conversations.
+    Payload can contain:
+    - faces: list of face objects { box, descriptor, crop, hint_name }
+    - threshold: optional float (default 0.55)
+    """
+    try:
+        data = request.get_json() or {}
+        faces = data.get("faces", [])
+        threshold = float(data.get("threshold", 0.55))
+
+        report = vision_memory.recognize_photo_faces(faces, threshold=threshold)
+        return jsonify(report), 200
+    except Exception as e:
+        logger.error(f"Error in v2_recognize_photo: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/v2/photo/enroll", methods=["POST"])
+def v2_photo_enroll():
+    """
+    Enroll a new individual detected from a static photo.
+    Payload:
+    - name: str (required)
+    - relationship: str
+    - description: str
+    - face_crop: str (data URL or thumbnail path)
+    - descriptor: list[float] (128D embedding)
+    - initial_note: str (optional conversation note)
+    """
+    try:
+        data = request.get_json() or {}
+        name = data.get("name", "").strip()
+        if not name:
+            return jsonify({"error": "Name is required"}), 400
+
+        relationship = data.get("relationship", "Contact")
+        description  = data.get("description", "")
+        face_crop    = data.get("face_crop")
+        descriptor   = data.get("descriptor")
+        initial_note = data.get("initial_note", "").strip()
+        tags         = data.get("tags") or ["Photo Enrolled"]
+
+        profile = vision_memory.enroll_person(
+            name=name,
+            relationship=relationship,
+            description=description,
+            face_crop=face_crop,
+            tags=tags,
+            descriptor=descriptor
+        )
+
+        # If an initial conversation note was provided, log it
+        if initial_note:
+            vision_memory.record_interaction(
+                person_id=profile["id"],
+                transcript=initial_note,
+                summary=initial_note,
+                sentiment="Warm / Welcoming"
+            )
+            # Re-fetch profile to include interaction
+            profile = vision_memory.get_person(profile["id"])
+
+        last_conv = vision_memory.get_last_conversation(profile["id"])
+        return jsonify({
+            "status": "success",
+            "message": f"Successfully enrolled {name} into memory.",
+            "profile": profile,
+            "last_conversation": last_conv
+        }), 201
+
+    except Exception as e:
+        logger.error(f"Error in v2_photo_enroll: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/v2/sample-photos", methods=["GET"])
+def v2_sample_photos():
+    """Provide curated sample photo presets for instant testing."""
+    samples = [
+        {
+            "id": "sample_sarah",
+            "name": "Sarah Jenkins",
+            "relationship": "Daughter",
+            "type": "single",
+            "expected_match": True,
+            "url": "/static/samples/sarah_jenkins.jpg",
+            "caption": "Sarah Jenkins (Daughter) — 1 Person, Met in Past",
+            "description": "Tests recognizing an enrolled family member and retrieving recent conversation about soccer gear."
+        },
+        {
+            "id": "sample_dr_thorne",
+            "name": "Dr. Aris Thorne",
+            "relationship": "Neurologist & Physician",
+            "type": "single",
+            "expected_match": True,
+            "url": "/static/samples/dr_thorne.jpg",
+            "caption": "Dr. Aris Thorne (Physician) — 1 Person, Met in Past",
+            "description": "Tests recognizing healthcare provider and retrieving 30-day cognitive puzzle review."
+        },
+        {
+            "id": "sample_marcus",
+            "name": "Marcus Vance",
+            "relationship": "Research Partner",
+            "type": "single",
+            "expected_match": True,
+            "url": "/static/samples/marcus_vance.jpg",
+            "caption": "Marcus Vance (Research Partner) — 1 Person, Met in Past",
+            "description": "Tests recognizing colleague and recalling WebRTC edge memory discussion."
+        },
+        {
+            "id": "sample_group",
+            "name": "Sarah & Colleague",
+            "relationship": "Multiple People",
+            "type": "group",
+            "expected_match": "partial",
+            "url": "/static/samples/group_sarah_and_colleague.jpg",
+            "caption": "Group Photo — 2 People (1 Met in Past + 1 New Person)",
+            "description": "Tests multi-person static photo recognition: Sarah is identified with past conversations, while the colleague is identified as new."
+        },
+        {
+            "id": "sample_unknown",
+            "name": "Unregistered Visitor",
+            "relationship": "Unknown",
+            "type": "single",
+            "expected_match": False,
+            "url": "/static/samples/unknown_visitor.jpg",
+            "caption": "Unknown Visitor — 1 Person, Not Met in Past",
+            "description": "Tests unfamiliar face recognition flow and provides 1-click memory enrollment."
+        }
+    ]
+    return jsonify({"samples": samples}), 200
+
+
+@app.route("/api/v2/conversations/<person_id_or_name>", methods=["GET"])
+def v2_get_conversations(person_id_or_name):
+    """Retrieve last conversation and full dialogue timeline for a person."""
+    try:
+        conv = vision_memory.get_last_conversation(person_id_or_name)
+        return jsonify(conv), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # ============== ERROR HANDLERS ==============
 
 @app.errorhandler(404)

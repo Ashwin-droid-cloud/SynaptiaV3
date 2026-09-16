@@ -1074,13 +1074,27 @@ onAuthChange(async (user) => {
   const userAvatar = $('#navUserAvatar');
   const userName = $('#navUserName');
 
-  if (!user) {
+  const isGuest = localStorage.getItem('synaptia_guest') === 'true';
+
+  if (!user && !isGuest) {
     if (logoutBtn) logoutBtn.style.display = 'none';
     if (userProfile) userProfile.style.display = 'none';
     // Redirect unauthenticated visitor to /login
     if (window.location.pathname !== '/login') {
       window.location.replace('/login');
     }
+    return;
+  }
+
+  if (isGuest && !user) {
+    if (logoutBtn) logoutBtn.style.display = 'inline-flex';
+    if (userProfile) {
+      userProfile.style.display = 'inline-flex';
+      const guestName = localStorage.getItem('synaptia_guest_name') || 'Guest Explorer';
+      if (userName) userName.textContent = guestName;
+      if (userAvatar) userAvatar.textContent = 'G';
+    }
+    console.log('[Synaptia] Auth state: Guest Demo Mode active');
     return;
   }
 
@@ -1151,6 +1165,8 @@ window.firebaseSignOut = async function () {
    Signs out from Firebase and redirects to /login.
    ============================================ */
 window.handleLogout = async function () {
+  localStorage.removeItem('synaptia_guest');
+  localStorage.removeItem('synaptia_guest_name');
   const btn = $('#logoutBtn');
   if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
   try {
@@ -1779,15 +1795,1050 @@ window.navigateTo = (function(prev) {
 })();
 
 /* ============================================================
-   SYNAPTIA V2 — LIVE PORTAL CONTROLLER
-   Direct integration with Synaptia V2 Next.js Environment
+   SYNAPTIA V2 — MULTIMODAL PHOTO MEMORY RECALL & LIVE PORTAL
+   Static Photo Multi-Face Recognition, Conversation History & AR HUD
    ============================================================ */
 
-function initV2Page() {
-  const frame = $('#v2AppFrame');
-  if (frame && (!frame.src || frame.src === 'about:blank' || frame.src === window.location.href)) {
-    frame.src = 'http://localhost:3000';
+let faceApiLoadingPromise = null;
+let faceApiLoaded = false;
+let currentPhotoDetections = [];
+let currentPhotoReport = null;
+let activeHighlightedBoxIndex = -1;
+let currentLoadedImage = null;
+let isPhotoAnalyzing = false;
+
+const SAMPLE_PRESETS = {};
+
+async function ensureFaceApiLoaded() {
+  if (faceApiLoaded) return true;
+  if (faceApiLoadingPromise) return faceApiLoadingPromise;
+
+  faceApiLoadingPromise = (async () => {
+    if (typeof window.faceapi === 'undefined') {
+      console.warn('[FaceAPI] window.faceapi not yet ready');
+      return false;
+    }
+    try {
+      updateViewerStatus('Loading neural face vision models…', 'loading');
+      const MODEL_URL = '/static/models/face-api';
+      await Promise.all([
+        window.faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        window.faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+        window.faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+      ]);
+      faceApiLoaded = true;
+      updateViewerStatus('Neural vision engine active', 'ready');
+      return true;
+    } catch (err) {
+      console.warn('[FaceAPI] Local model loading fallback:', err);
+      updateViewerStatus('Server-side matching ready', 'ready');
+      return false;
+    }
+  })();
+
+  return faceApiLoadingPromise;
+}
+
+function updateViewerStatus(text, type = 'ready') {
+  const dot = document.getElementById('viewerStatusDot');
+  const txt = document.getElementById('viewerStatusText');
+  if (txt) txt.textContent = text;
+  if (dot) {
+    dot.className = `status-indicator-dot dot-${type}`;
   }
 }
 
+/* ============================================================
+   SYNAPTIA V2 — LIVE AR GLASS & MEMORY ENGINE CONTROLLER
+   ============================================================ */
+
+function switchV2Subtab(subtabName) {
+  // Capsule 1: live-stream, Capsule 2: photo-recall
+  const tabNames = ['live-stream', 'photo-recall'];
+  tabNames.forEach(t => {
+    const btnId = t === 'photo-recall' ? 'subtabBtnPhotoRecall' : 'subtabBtnLiveStream';
+    const paneId = t === 'photo-recall' ? 'v2TabPhotoRecall' : 'v2TabLiveStream';
+    const btn = document.getElementById(btnId);
+    const pane = document.getElementById(paneId);
+    if (btn) btn.classList.toggle('active', t === subtabName);
+    if (pane) pane.classList.toggle('active', t === subtabName);
+  });
+
+  if (subtabName === 'live-stream') {
+    const frame = document.getElementById('v2AppFrame');
+    if (frame && (!frame.src || frame.src === 'about:blank' || frame.src === window.location.href)) {
+      frame.src = 'http://localhost:3000';
+    }
+  } else if (subtabName === 'photo-recall') {
+    ensureFaceApiLoaded();
+    setupDropzoneAndPaste();
+  }
+}
+
+function triggerPhotoUpload() {
+  const input = document.getElementById('photoFileInput');
+  if (input) {
+    input.value = '';
+    input.click();
+  }
+}
+
+function handlePhotoFileSelected(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    // Clear sample chip selection
+    document.querySelectorAll('.sample-chip-btn').forEach(btn => btn.classList.remove('active'));
+    analyzeStaticPhoto(e.target.result, null, file.name);
+  };
+  reader.readAsDataURL(file);
+}
+
+function setupDropzoneAndPaste() {
+  const dropzone = document.getElementById('photoDropzone');
+  if (dropzone && !dropzone.dataset.initialized) {
+    dropzone.dataset.initialized = 'true';
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('drag-over');
+    });
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('drag-over');
+    });
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('drag-over');
+      const files = e.dataTransfer.files;
+      if (files && files[0] && files[0].type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          document.querySelectorAll('.sample-chip-btn').forEach(btn => btn.classList.remove('active'));
+          analyzeStaticPhoto(ev.target.result, null, files[0].name);
+        };
+        reader.readAsDataURL(files[0]);
+      }
+    });
+  }
+
+  // Window paste support
+  if (!window._pasteListenerAttached) {
+    window._pasteListenerAttached = true;
+    window.addEventListener('paste', (e) => {
+      const activeV2 = document.getElementById('page-v2');
+      if (!activeV2 || !activeV2.classList.contains('active')) return;
+      const photoTab = document.getElementById('v2TabPhotoRecall');
+      if (!photoTab || !photoTab.classList.contains('active')) return;
+
+      const items = (e.clipboardData || e.originalEvent.clipboardData)?.items;
+      if (!items) return;
+      for (let item of items) {
+        if (item.type.indexOf('image') !== -1) {
+          const blob = item.getAsFile();
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            document.querySelectorAll('.sample-chip-btn').forEach(btn => btn.classList.remove('active'));
+            analyzeStaticPhoto(ev.target.result, null, 'Clipboard Image');
+          };
+          reader.readAsDataURL(blob);
+          toast('Processing image from clipboard…', 'info');
+          break;
+        }
+      }
+    });
+  }
+}
+
+function loadSamplePhoto(sampleId) {
+  const preset = SAMPLE_PRESETS[sampleId];
+  if (!preset) return;
+
+  document.querySelectorAll('.sample-chip-btn').forEach(btn => btn.classList.remove('active'));
+  const clickedBtn = event && event.currentTarget;
+  if (clickedBtn) clickedBtn.classList.add('active');
+
+  toast(`Loading sample: ${preset.name}…`, 'info');
+  analyzeStaticPhoto(preset.url, preset.hint, preset.name);
+}
+
+async function analyzeStaticPhoto(imageSrc, hintName = null, photoLabel = 'Photo') {
+  if (isPhotoAnalyzing) return;
+  isPhotoAnalyzing = true;
+
+  const dropzone = document.getElementById('photoDropzone');
+  const viewerCard = document.getElementById('canvasViewerCard');
+  const scanLaser = document.getElementById('photoScanLaser');
+  const emptyState = document.getElementById('resultsEmptyState');
+  const cardsList = document.getElementById('faceCardsList');
+  const counterPill = document.getElementById('resultsCounterPill');
+  const counterText = document.getElementById('resultsCounterText');
+
+  if (dropzone) dropzone.classList.add('hidden');
+  if (viewerCard) viewerCard.classList.remove('hidden');
+  if (scanLaser) scanLaser.classList.remove('hidden');
+  if (emptyState) emptyState.classList.add('hidden');
+  if (cardsList) {
+    cardsList.classList.remove('hidden');
+    cardsList.innerHTML = `
+      <div class="analysis-loading-skeleton glass-panel">
+        <div class="skeleton-shimmer"></div>
+        <div class="skeleton-icon-ring">
+          <div class="loader-ring"><div class="loader-inner"></div></div>
+        </div>
+        <h4>Analyzing Visual Biometrics…</h4>
+        <p>Detecting facial geometry & querying conversational memory store</p>
+      </div>
+    `;
+  }
+  if (counterPill) counterPill.classList.add('hidden');
+
+  updateViewerStatus(`Scanning ${photoLabel}…`, 'loading');
+
+  try {
+    await ensureFaceApiLoaded();
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = imageSrc;
+
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () => reject(new Error('Failed to load photograph image'));
+    });
+
+    currentLoadedImage = img;
+
+    // Setup canvas
+    const canvas = document.getElementById('photoOverlayCanvas');
+    const stageWrapper = document.getElementById('canvasStageWrapper');
+    const ctx = canvas.getContext('2d');
+
+    // Calculate responsive display size preserving aspect ratio
+    const maxWidth = stageWrapper ? stageWrapper.clientWidth || 560 : 560;
+    const scale = Math.min(1.0, maxWidth / img.naturalWidth);
+    const displayWidth = Math.round(img.naturalWidth * scale);
+    const displayHeight = Math.round(img.naturalHeight * scale);
+
+    canvas.width = displayWidth;
+    canvas.height = displayHeight;
+    canvas.style.width = `${displayWidth}px`;
+    canvas.style.height = `${displayHeight}px`;
+
+    // Draw base image onto canvas
+    ctx.drawImage(img, 0, 0, displayWidth, displayHeight);
+
+    // Detect faces using face-api if available
+    let detectedFacesPayload = [];
+    let rawDetections = [];
+
+    if (window.faceapi && faceApiLoaded) {
+      try {
+        const detections = await window.faceapi
+          .detectAllFaces(img, new window.faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.3 }))
+          .withFaceLandmarks()
+          .withFaceDescriptors();
+
+        rawDetections = detections;
+
+        for (let i = 0; i < detections.length; i++) {
+          const d = detections[i];
+          const box = d.detection.box;
+
+          // Crop face to data URL
+          const cropCanvas = document.createElement('canvas');
+          const pad = Math.max(16, box.width * 0.2);
+          const cropX = Math.max(0, box.x - pad);
+          const cropY = Math.max(0, box.y - pad);
+          const cropW = Math.min(img.naturalWidth - cropX, box.width + pad * 2);
+          const cropH = Math.min(img.naturalHeight - cropY, box.height + pad * 2);
+
+          cropCanvas.width = 160;
+          cropCanvas.height = 160;
+          const cropCtx = cropCanvas.getContext('2d');
+          cropCtx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, 160, 160);
+          const faceCropUrl = cropCanvas.toDataURL('image/jpeg', 0.85);
+
+          detectedFacesPayload.push({
+            box: {
+              x: Math.round(box.x * scale),
+              y: Math.round(box.y * scale),
+              width: Math.round(box.width * scale),
+              height: Math.round(box.height * scale)
+            },
+            descriptor: Array.from(d.descriptor),
+            crop: faceCropUrl,
+            hint_name: hintName && detections.length === 1 ? hintName : null
+          });
+        }
+      } catch (detErr) {
+        console.warn('[FaceAPI] Client detection error, falling back:', detErr);
+      }
+    }
+
+    // Fallback if client face-api found nothing but hintName is given or single portrait
+    if (detectedFacesPayload.length === 0 && hintName) {
+      detectedFacesPayload.push({
+        box: {
+          x: Math.round(displayWidth * 0.25),
+          y: Math.round(displayHeight * 0.15),
+          width: Math.round(displayWidth * 0.5),
+          height: Math.round(displayHeight * 0.5)
+        },
+        hint_name: hintName,
+        crop: imageSrc
+      });
+    }
+
+    // If still no faces detected
+    if (detectedFacesPayload.length === 0) {
+      if (scanLaser) scanLaser.classList.add('hidden');
+      updateViewerStatus('No faces found in photo', 'warning');
+      cardsList.innerHTML = `
+        <div class="no-faces-card glass-panel">
+          <div class="no-faces-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+            </svg>
+          </div>
+          <h4>No Faces Detected</h4>
+          <p>We couldn't detect any clear frontal faces in this photograph. Please try another photo with better lighting or closer perspective.</p>
+          <button class="btn btn-hero btn-sm" onclick="triggerPhotoUpload()">Try Another Photo</button>
+        </div>
+      `;
+      isPhotoAnalyzing = false;
+      return;
+    }
+
+    // Call Backend Recognition & Last Conversation API
+    const response = await fetch('/api/v2/recognize-photo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        faces: detectedFacesPayload,
+        threshold: 0.55
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Recognition API failed with status ${response.status}`);
+    }
+
+    const report = await response.json();
+    currentPhotoReport = report;
+    currentPhotoDetections = report.results || [];
+
+    if (scanLaser) scanLaser.classList.add('hidden');
+
+    // Update Counter Pill
+    if (counterPill && counterText) {
+      counterPill.classList.remove('hidden');
+      const metTxt = report.met_count > 0 ? `${report.met_count} Met in Past` : '';
+      const unmetTxt = report.unmet_count > 0 ? `${report.unmet_count} New` : '';
+      counterText.textContent = `${report.total_faces} Face${report.total_faces > 1 ? 's' : ''} (${[metTxt, unmetTxt].filter(Boolean).join(', ')})`;
+    }
+
+    updateViewerStatus(`Identified ${report.total_faces} individual${report.total_faces > 1 ? 's' : ''}`, 'ready');
+
+    // Redraw Canvas with Interactive Bounding Boxes
+    drawPhotoOverlay(canvas, img, currentPhotoDetections, -1);
+    setupCanvasInteractivity(canvas);
+
+    // Render Recognition & Last Conversation Cards
+    renderRecognitionCards(currentPhotoDetections);
+
+    toast(`Analysis complete: ${report.met_count} recognized from past encounters.`, 'success');
+  } catch (err) {
+    console.error('[AnalyzeStaticPhoto] Error:', err);
+    if (scanLaser) scanLaser.classList.add('hidden');
+    updateViewerStatus('Analysis error', 'error');
+    if (cardsList) {
+      cardsList.innerHTML = `
+        <div class="error-card glass-panel">
+          <h4>Analysis Error</h4>
+          <p>${err.message || 'An error occurred while recognizing people in this photo.'}</p>
+          <button class="btn btn-hero btn-sm" onclick="triggerPhotoUpload()">Try Again</button>
+        </div>
+      `;
+    }
+    toast('Error analyzing photo: ' + err.message, 'error');
+  } finally {
+    isPhotoAnalyzing = false;
+  }
+}
+
+function drawPhotoOverlay(canvas, img, detections, highlightIndex = -1) {
+  if (!canvas || !img) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+
+  // Redraw clear image
+  ctx.clearRect(0, 0, w, h);
+  ctx.drawImage(img, 0, 0, w, h);
+
+  // Draw subtle dark vignette if faces exist
+  if (detections && detections.length > 0) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  detections.forEach((item, idx) => {
+    const box = item.box || {};
+    const bx = box.x || 0;
+    const by = box.y || 0;
+    const bw = box.width || 80;
+    const bh = box.height || 80;
+    const isMet = item.met_in_past;
+    const isHighlighted = idx === highlightIndex;
+
+    // Box Styles
+    const strokeColor = isMet ? 'rgba(16, 185, 129, 0.95)' : 'rgba(245, 158, 11, 0.95)';
+    const glowColor   = isMet ? 'rgba(16, 185, 129, 0.45)' : 'rgba(245, 158, 11, 0.45)';
+    const fillColor   = isHighlighted
+      ? (isMet ? 'rgba(16, 185, 129, 0.22)' : 'rgba(245, 158, 11, 0.22)')
+      : 'rgba(0, 0, 0, 0.05)';
+
+    ctx.save();
+
+    // Box Glow
+    ctx.shadowColor = glowColor;
+    ctx.shadowBlur = isHighlighted ? 18 : 10;
+    ctx.lineWidth = isHighlighted ? 3 : 2;
+    ctx.strokeStyle = strokeColor;
+    ctx.fillStyle = fillColor;
+
+    // Rounded rectangle
+    drawRoundedRect(ctx, bx, by, bw, bh, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    // Corner crosshairs for sci-fi AR feel
+    const cornerLen = Math.min(14, bw * 0.25);
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = 3.5;
+    ctx.strokeStyle = strokeColor;
+
+    // Top-left
+    ctx.beginPath();
+    ctx.moveTo(bx, by + cornerLen);
+    ctx.lineTo(bx, by);
+    ctx.lineTo(bx + cornerLen, by);
+    ctx.stroke();
+
+    // Top-right
+    ctx.beginPath();
+    ctx.moveTo(bx + bw - cornerLen, by);
+    ctx.lineTo(bx + bw, by);
+    ctx.lineTo(bx + bw, by + cornerLen);
+    ctx.stroke();
+
+    // Bottom-left
+    ctx.beginPath();
+    ctx.moveTo(bx, by + bh - cornerLen);
+    ctx.lineTo(bx, by + bh);
+    ctx.lineTo(bx + cornerLen, by + bh);
+    ctx.stroke();
+
+    // Bottom-right
+    ctx.beginPath();
+    ctx.moveTo(bx + bw - cornerLen, by + bh);
+    ctx.lineTo(bx + bw, by + bh);
+    ctx.lineTo(bx + bw, by + bh - cornerLen);
+    ctx.stroke();
+
+    // Label Pill
+    const personName = isMet ? (item.person?.name || 'Recognized Person') : 'Not Met in Past';
+    const tagText = isMet ? `${personName} (${item.person?.relationship || 'Contact'})` : 'New Face';
+    
+    ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    const textWidth = ctx.measureText(tagText).width;
+    const pillW = textWidth + 24;
+    const pillH = 22;
+    const pillX = Math.max(4, Math.min(w - pillW - 4, bx));
+    const pillY = by > pillH + 6 ? by - pillH - 6 : by + bh + 6;
+
+    // Pill background
+    ctx.fillStyle = isMet ? 'rgba(6, 78, 59, 0.92)' : 'rgba(120, 53, 15, 0.92)';
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 6;
+    drawRoundedRect(ctx, pillX, pillY, pillW, pillH, 6);
+    ctx.fill();
+
+    // Status Dot
+    ctx.fillStyle = strokeColor;
+    ctx.beginPath();
+    ctx.arc(pillX + 10, pillY + pillH / 2, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Text
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowBlur = 0;
+    ctx.fillText(tagText, pillX + 18, pillY + 15);
+
+    ctx.restore();
+  });
+}
+
+function drawRoundedRect(ctx, x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+function setupCanvasInteractivity(canvas) {
+  if (!canvas || canvas.dataset.interactive) return;
+  canvas.dataset.interactive = 'true';
+
+  function findFaceAtCoord(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const cx = (e.clientX - rect.left) * scaleX;
+    const cy = (e.clientY - rect.top) * scaleY;
+
+    for (let i = currentPhotoDetections.length - 1; i >= 0; i--) {
+      const box = currentPhotoDetections[i].box;
+      if (box && cx >= box.x && cx <= box.x + box.width && cy >= box.y && cy <= box.y + box.height) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  canvas.addEventListener('mousemove', (e) => {
+    const hitIndex = findFaceAtCoord(e);
+    if (hitIndex !== activeHighlightedBoxIndex) {
+      activeHighlightedBoxIndex = hitIndex;
+      canvas.style.cursor = hitIndex >= 0 ? 'pointer' : 'default';
+      drawPhotoOverlay(canvas, currentLoadedImage, currentPhotoDetections, hitIndex);
+
+      // Highlight corresponding card in results list
+      document.querySelectorAll('.person-recall-card').forEach((card, idx) => {
+        card.classList.toggle('card-hover-active', idx === hitIndex);
+      });
+    }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    if (activeHighlightedBoxIndex !== -1) {
+      activeHighlightedBoxIndex = -1;
+      drawPhotoOverlay(canvas, currentLoadedImage, currentPhotoDetections, -1);
+      document.querySelectorAll('.person-recall-card').forEach(card => card.classList.remove('card-hover-active'));
+    }
+  });
+
+  canvas.addEventListener('click', (e) => {
+    const hitIndex = findFaceAtCoord(e);
+    if (hitIndex >= 0) {
+      const targetCard = document.getElementById(`personRecallCard_${hitIndex}`);
+      if (targetCard) {
+        targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        targetCard.classList.add('card-pulse-focus');
+        setTimeout(() => targetCard.classList.remove('card-pulse-focus'), 1200);
+      }
+    }
+  });
+}
+
+function highlightFaceBox(faceIndex) {
+  const canvas = document.getElementById('photoOverlayCanvas');
+  if (canvas && currentLoadedImage) {
+    activeHighlightedBoxIndex = faceIndex;
+    drawPhotoOverlay(canvas, currentLoadedImage, currentPhotoDetections, faceIndex);
+  }
+}
+
+function renderRecognitionCards(detections) {
+  const container = document.getElementById('faceCardsList');
+  if (!container) return;
+
+  if (!detections || detections.length === 0) {
+    container.innerHTML = `<p class="no-results-text">No individuals identified in memory.</p>`;
+    return;
+  }
+
+  const html = detections.map((item, idx) => {
+    const isMet = item.met_in_past;
+    const person = item.person;
+    const lastConv = item.last_conversation;
+    const cropSrc = item.face_crop || (person && person.sample_photo) || '/static/placeholder-user.jpg';
+    const cardId = `personRecallCard_${idx}`;
+
+    if (isMet) {
+      // Recognized Individual Card
+      const relTime = lastConv ? lastConv.relative_time : 'Recent';
+      const summaryText = lastConv?.summary || 'No conversation recorded.';
+      const transcriptText = lastConv?.transcript || '';
+      const sentiment = lastConv?.sentiment || 'Positive';
+      const recallCues = lastConv?.recall_cues || [];
+      const totalInteractions = lastConv?.total_interactions || 1;
+      const historyItems = lastConv?.history || [];
+
+      return `
+        <div class="person-recall-card card-met glass-panel" id="${cardId}" onmouseenter="highlightFaceBox(${idx})" onmouseleave="highlightFaceBox(-1)">
+          <div class="person-card-header">
+            <div class="person-avatar-wrap">
+              <img src="${cropSrc}" alt="${person.name}" class="person-avatar-img" />
+              <div class="status-badge-indicator badge-met">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+            </div>
+
+            <div class="person-identity-meta">
+              <div class="identity-top-row">
+                <h4 class="person-name">${person.name}</h4>
+                <div class="met-status-pill pill-met">
+                  <span class="dot-pulse"></span>
+                  <span>MET IN PAST</span>
+                </div>
+              </div>
+              <div class="identity-sub-row">
+                <span class="relationship-pill">${person.relationship || 'Contact'}</span>
+                <span class="match-score-pill">${item.confidence}% Match</span>
+                <span class="encounters-count-pill">${totalInteractions} Encounter${totalInteractions !== 1 ? 's' : ''}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Last Conversation Recall Box -->
+          <div class="last-conversation-box">
+            <div class="conversation-box-header">
+              <div class="conv-title-wrap">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span class="conv-header-label">LAST CONVERSATION</span>
+              </div>
+              <div class="conv-timestamp" title="${lastConv?.timestamp || ''}">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span>${relTime}</span>
+              </div>
+            </div>
+
+            <div class="conversation-summary-body">
+              <p class="conv-summary-text">"${summaryText}"</p>
+              ${transcriptText ? `<div class="conv-transcript-quote"><span class="quote-label">Spoken:</span> "${transcriptText}"</div>` : ''}
+            </div>
+
+            <!-- Sentiment & Recall Cue Tags -->
+            <div class="conv-meta-footer">
+              <div class="sentiment-pill">
+                <span class="sentiment-icon">🎭</span>
+                <span>Tone: ${sentiment}</span>
+              </div>
+              ${recallCues.length > 0 ? `
+                <div class="recall-cue-pill" title="${recallCues[0]}">
+                  <span class="cue-bulb">💡</span>
+                  <span>Talking Point: ${recallCues[0]}</span>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Collapsible Timeline Toggle -->
+            ${historyItems.length > 1 ? `
+              <div class="timeline-accordion-toggle" onclick="toggleTimelineHistory(${idx})">
+                <span id="timelineToggleLabel_${idx}">View Earlier Conversations (${historyItems.length - 1} more)</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="timelineToggleIcon_${idx}">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </div>
+              <div class="timeline-history-drawer hidden" id="timelineDrawer_${idx}">
+                ${historyItems.slice(1).map(h => `
+                  <div class="history-item">
+                    <div class="history-item-time">${h.relative_time}</div>
+                    <div class="history-item-summary">${h.summary}</div>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    } else {
+      // Unrecognized Individual Card
+      const descJson = item.descriptor ? JSON.stringify(item.descriptor) : '[]';
+      const escapedCrop = encodeURIComponent(cropSrc);
+
+      return `
+        <div class="person-recall-card card-new glass-panel" id="${cardId}" onmouseenter="highlightFaceBox(${idx})" onmouseleave="highlightFaceBox(-1)">
+          <div class="person-card-header">
+            <div class="person-avatar-wrap">
+              <img src="${cropSrc}" alt="Unrecognized Face" class="person-avatar-img avatar-grayscale" />
+              <div class="status-badge-indicator badge-new">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </div>
+            </div>
+
+            <div class="person-identity-meta">
+              <div class="identity-top-row">
+                <h4 class="person-name">Unrecognized Individual</h4>
+                <div class="met-status-pill pill-new">
+                  <span>NOT MET IN PAST</span>
+                </div>
+              </div>
+              <div class="identity-sub-row">
+                <span class="relationship-pill pill-muted">No Prior Records</span>
+                <span class="new-face-hint">Detected in static photo</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="new-person-callout">
+            <div class="callout-msg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>You have not met this person before — no conversation records exist in your memory store.</span>
+            </div>
+            <button class="btn btn-hero btn-sm btn-enroll-trigger" onclick="openEnrollFromCard(${idx}, '${escapedCrop}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <span>Enroll & Remember This Person</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+  }).join('');
+
+  container.innerHTML = html;
+}
+
+function toggleTimelineHistory(idx) {
+  const drawer = document.getElementById(`timelineDrawer_${idx}`);
+  const icon = document.getElementById(`timelineToggleIcon_${idx}`);
+  const label = document.getElementById(`timelineToggleLabel_${idx}`);
+  if (!drawer) return;
+
+  const isHidden = drawer.classList.contains('hidden');
+  drawer.classList.toggle('hidden', !isHidden);
+  if (icon) icon.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+  if (label) label.textContent = isHidden ? 'Hide Earlier Conversations' : 'View Earlier Conversations';
+}
+
+function openEnrollFromCard(faceIdx, encodedCrop) {
+  const crop = decodeURIComponent(encodedCrop);
+  const faceItem = currentPhotoDetections[faceIdx] || {};
+  const descriptor = faceItem.descriptor || [];
+
+  const modal = document.getElementById('photoEnrollModal');
+  const avatarPreview = document.getElementById('enrollAvatarPreview');
+  const faceCropInput = document.getElementById('enrollFaceCropInput');
+  const descriptorInput = document.getElementById('enrollDescriptorInput');
+  const nameInput = document.getElementById('enrollNameInput');
+  const noteInput = document.getElementById('enrollInitialNoteInput');
+  const relInput = document.getElementById('enrollRelationshipInput');
+  const sourceInput = document.getElementById('enrollSourceInput');
+  const title = document.getElementById('enrollModalTitle');
+  const sub = document.getElementById('enrollModalSub');
+
+  if (avatarPreview) avatarPreview.src = crop;
+  if (faceCropInput) faceCropInput.value = crop;
+  if (descriptorInput) descriptorInput.value = JSON.stringify(descriptor);
+  if (nameInput) {
+    nameInput.value = '';
+    setTimeout(() => nameInput.focus(), 60);
+  }
+  if (noteInput) noteInput.value = '';
+  if (relInput) relInput.value = 'Friend';
+  if (sourceInput) sourceInput.value = 'photo';
+  if (title) title.textContent = 'Enroll Detected Person';
+  if (sub) sub.textContent = 'Save this detected face into perceptual memory with personal context.';
+
+  if (modal) modal.classList.remove('hidden');
+}
+
+function openManualEnrollModal() {
+  const modal = document.getElementById('photoEnrollModal');
+  const avatarPreview = document.getElementById('enrollAvatarPreview');
+  const faceCropInput = document.getElementById('enrollFaceCropInput');
+  const descriptorInput = document.getElementById('enrollDescriptorInput');
+  const nameInput = document.getElementById('enrollNameInput');
+  const noteInput = document.getElementById('enrollInitialNoteInput');
+  const relInput = document.getElementById('enrollRelationshipInput');
+  const sourceInput = document.getElementById('enrollSourceInput');
+  const title = document.getElementById('enrollModalTitle');
+  const sub = document.getElementById('enrollModalSub');
+
+  const DEFAULT_AVATAR_URI = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+  if (avatarPreview) avatarPreview.src = DEFAULT_AVATAR_URI;
+  if (faceCropInput) faceCropInput.value = '';
+  if (descriptorInput) descriptorInput.value = '';
+  if (nameInput) {
+    nameInput.value = '';
+    setTimeout(() => nameInput.focus(), 60);
+  }
+  if (noteInput) noteInput.value = '';
+  if (relInput) relInput.value = 'Friend';
+  if (sourceInput) sourceInput.value = 'manual';
+  if (title) title.textContent = 'Add New Person';
+  if (sub) sub.textContent = 'Enter profile details to register this individual into your perceptual memory store.';
+
+  if (modal) modal.classList.remove('hidden');
+}
+
+function triggerAvatarUpload() {
+  const input = document.getElementById('enrollAvatarFileInput');
+  if (input) {
+    input.value = '';
+    input.click();
+  }
+}
+
+async function handleEnrollAvatarFile(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const dataUrl = e.target.result;
+    const avatarPreview = document.getElementById('enrollAvatarPreview');
+    const faceCropInput = document.getElementById('enrollFaceCropInput');
+    const descriptorInput = document.getElementById('enrollDescriptorInput');
+
+    if (avatarPreview) avatarPreview.src = dataUrl;
+    if (faceCropInput) faceCropInput.value = dataUrl;
+
+    try {
+      if (typeof window.faceapi !== 'undefined' && faceApiLoaded) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = async () => {
+          try {
+            const detection = await window.faceapi
+              .detectSingleFace(img, new window.faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.3 }))
+              .withFaceLandmarks()
+              .withFaceDescriptor();
+            if (detection && detection.descriptor && descriptorInput) {
+              descriptorInput.value = JSON.stringify(Array.from(detection.descriptor));
+              console.log('[EnrollAvatar] Extracted 128D face descriptor from uploaded portrait.');
+            }
+          } catch (err) {
+            console.warn('[EnrollAvatar] Could not compute descriptor:', err);
+          }
+        };
+        img.src = dataUrl;
+      }
+    } catch (err) {
+      console.warn('[EnrollAvatar] Portrait processing note:', err);
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function closeEnrollModal() {
+  const modal = document.getElementById('photoEnrollModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function handleEnrollModalOverlayClick(event) {
+  if (event.target.id === 'photoEnrollModal') {
+    closeEnrollModal();
+  }
+}
+
+async function handleEnrollSubmit(event) {
+  event.preventDefault();
+
+  const nameInput = document.getElementById('enrollNameInput');
+  const relInput = document.getElementById('enrollRelationshipInput');
+  const noteInput = document.getElementById('enrollInitialNoteInput');
+  const cropInput = document.getElementById('enrollFaceCropInput');
+  const descInput = document.getElementById('enrollDescriptorInput');
+  const submitBtn = document.getElementById('enrollSubmitBtn');
+
+  const name = nameInput ? nameInput.value.trim() : '';
+  if (!name) {
+    toast('Please enter a name for this individual.', 'error');
+    return;
+  }
+
+  let descriptor = null;
+  try {
+    if (descInput && descInput.value) {
+      descriptor = JSON.parse(descInput.value);
+    }
+  } catch (e) {
+    descriptor = null;
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span>Saving into memory…</span>`;
+  }
+
+  const sourceInput = document.getElementById('enrollSourceInput');
+  const source = sourceInput ? sourceInput.value : 'live-stream';
+
+  try {
+    const res = await fetch('/api/v2/photo/enroll', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: name,
+        relationship: relInput ? relInput.value : 'Contact',
+        description: source === 'live-stream'
+          ? `Enrolled via On-Site Live Video on ${new Date().toLocaleDateString()}`
+          : `Enrolled via Static Photo on ${new Date().toLocaleDateString()}`,
+        face_crop: cropInput ? cropInput.value : null,
+        descriptor: descriptor,
+        initial_note: noteInput ? noteInput.value.trim() : '',
+        tags: source === 'live-stream' ? ["Live Registered", "On-Site"] : ["Photo Enrolled"]
+      })
+    });
+
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.error || 'Enrollment failed');
+    }
+
+    const data = await res.json();
+    toast(`✨ ${name} enrolled! Live video and photo memory will now recognize them.`, 'success');
+    closeEnrollModal();
+
+    // Cache the newly enrolled person for real-time live recognition!
+    if (data.profile) {
+      liveEnrolledPeople.unshift(data.profile);
+    }
+    await loadLiveEnrolledPeople();
+
+    // If active photo loaded in Photo Recall tab, re-analyze
+    if (currentLoadedImage) {
+      const canvas = document.getElementById('photoOverlayCanvas');
+      analyzeStaticPhoto(currentLoadedImage.src, name, 'Updated Memory');
+    } else {
+      loadMemoryRegistry();
+    }
+  } catch (err) {
+    console.error('[EnrollSubmit] Error:', err);
+    toast('Enrollment error: ' + err.message, 'error');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+        <span>Save into Memory</span>
+      `;
+    }
+  }
+}
+
+async function loadMemoryRegistry() {
+  const grid = document.getElementById('registryGrid');
+  if (!grid) return;
+
+  grid.innerHTML = `
+    <div class="registry-loading">
+      <div class="loader-ring"><div class="loader-inner"></div></div>
+      <p>Loading perceptual memory registry…</p>
+    </div>
+  `;
+
+  try {
+    const res = await fetch('/api/v2/people');
+    if (!res.ok) throw new Error('Failed to load contacts');
+    const data = await res.json();
+    const people = data.people || [];
+
+    if (people.length === 0) {
+      grid.innerHTML = `<p class="registry-empty">No contacts currently enrolled in memory.</p>`;
+      return;
+    }
+
+    grid.innerHTML = people.map(p => {
+      const interactions = p.interactions || [];
+      const lastInt = interactions[0];
+      const convSummary = lastInt ? lastInt.summary : 'No conversation recorded yet.';
+      const avatarSrc = p.face_thumbnail || p.sample_photo || '/static/placeholder-user.jpg';
+
+      return `
+        <div class="registry-card glass-panel">
+          <div class="reg-card-top">
+            <div class="reg-avatar-wrap" style="border-color: ${p.avatar_color || '#6366f1'}">
+              <img src="${avatarSrc}" alt="${p.name}" class="reg-avatar-img">
+            </div>
+            <div class="reg-meta">
+              <h4 class="reg-name">${p.name}</h4>
+              <span class="reg-rel" style="color: ${p.avatar_color || '#6366f1'}">${p.relationship || 'Contact'}</span>
+            </div>
+          </div>
+          <div class="reg-last-conv">
+            <div class="reg-conv-title">Last Conversation:</div>
+            <p class="reg-conv-body">"${convSummary}"</p>
+          </div>
+          <div class="reg-footer">
+            <span class="reg-count">${interactions.length} Conversation${interactions.length !== 1 ? 's' : ''}</span>
+            <span class="reg-tag">${p.tags ? p.tags[0] : 'Enrolled'}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    grid.innerHTML = `<p class="registry-error">Error loading registry: ${err.message}</p>`;
+  }
+}
+
+function initV2Page() {
+  const frame = document.getElementById('v2AppFrame');
+  if (frame && (!frame.src || frame.src === 'about:blank' || frame.src === window.location.href)) {
+    frame.src = 'http://localhost:3000';
+  }
+  setupDropzoneAndPaste();
+  switchV2Subtab('live-stream');
+}
+
+function reloadV2AppFrame() {
+  const frame = document.getElementById('v2AppFrame');
+  if (frame) {
+    const current = frame.src;
+    frame.src = 'about:blank';
+    setTimeout(() => {
+      frame.src = current && current !== 'about:blank' ? current : 'http://localhost:3000';
+    }, 60);
+    toast('Reloading Live AR Glass Stream…', 'info');
+  }
+}
+
+// Window exports for inline onclick handlers
 window.initV2Page = initV2Page;
+window.switchV2Subtab = switchV2Subtab;
+window.reloadV2AppFrame = reloadV2AppFrame;
+window.triggerPhotoUpload = triggerPhotoUpload;
+window.handlePhotoFileSelected = handlePhotoFileSelected;
+window.loadSamplePhoto = loadSamplePhoto;
+window.highlightFaceBox = highlightFaceBox;
+window.toggleTimelineHistory = toggleTimelineHistory;
+window.openEnrollFromCard = openEnrollFromCard;
+window.openManualEnrollModal = openManualEnrollModal;
+window.triggerAvatarUpload = triggerAvatarUpload;
+window.handleEnrollAvatarFile = handleEnrollAvatarFile;
+window.closeEnrollModal = closeEnrollModal;
+window.handleEnrollModalOverlayClick = handleEnrollModalOverlayClick;
+window.handleEnrollSubmit = handleEnrollSubmit;
+window.loadMemoryRegistry = loadMemoryRegistry;
+

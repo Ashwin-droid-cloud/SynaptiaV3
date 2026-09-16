@@ -14,14 +14,13 @@ class PuzzleCLI:
     
     def __init__(self):
         """Initialize CLI"""
-        api_key = os.getenv("OPENAI_API_KEY")
-        
+        api_key = os.getenv("GROQ_API_KEY") or os.getenv("OPENAI_API_KEY")
         if not api_key:
-            print("Error: OPENAI_API_KEY not found in environment variables")
-            sys.exit(1)
+            print("[Synaptia CLI] Running in offline / curated mode.")
+            print("Tip: set GROQ_API_KEY in .env for infinite AI puzzle generation.\n")
         
-        self.puzzle_gen = PuzzleGenerator(api_key)
-        self.hint_provider = HintProvider(api_key)
+        self.puzzle_gen = PuzzleGenerator()
+        self.hint_provider = HintProvider()
         self.current_puzzle = None
         self.session_id = "cli_session"
     

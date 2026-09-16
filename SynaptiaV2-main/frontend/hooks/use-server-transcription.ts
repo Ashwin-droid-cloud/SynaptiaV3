@@ -4,15 +4,23 @@ import { useEffect, useRef, useState, useCallback } from "react"
 import { summarizeTranscriptLocally, formatLocalHighlights } from "@/lib/local-summarizer"
 import { extractVoiceDescriptor, enrollVoiceprint, getEnrolledVoiceprint } from "@/lib/voice-descriptor"
 
-
 const INFERENCE_BACKEND_URL = "http://localhost:8002"
 
 type TranscriptionStatus = "idle" | "listening" | "transcribing" | "error"
+
+export interface TranscriptionEventResult {
+  text: string
+  summary: string | null
+  speakerName: string | null
+  verified: boolean
+}
 
 interface UseServerTranscriptionOptions {
   enabled: boolean
   stream: MediaStream | null
   personName?: string
+  candidateNames?: string[]
+  onTranscriptionComplete?: (result: TranscriptionEventResult) => void
 }
 
 function supportedMimeType() {
@@ -35,14 +43,33 @@ export function deduplicateSummary(summary: string | null): string | null {
   return formatted || null
 }
 
-export function useServerTranscription({ enabled, stream, personName }: UseServerTranscriptionOptions) {
+export function useServerTranscription({
+  enabled,
+  stream,
+  personName,
+  candidateNames,
+  onTranscriptionComplete,
+}: UseServerTranscriptionOptions) {
   const [status, setStatus] = useState<TranscriptionStatus>("idle")
   const [memorySummary, setMemorySummary] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isVoiceVerified, setIsVoiceVerified] = useState(false)
   const [lastSpeakerStatus, setLastSpeakerStatus] = useState<string | null>(null)
+  const [lastVerifiedSpeaker, setLastVerifiedSpeaker] = useState<string | null>(null)
+
+  // Calibration states
+  const [isCalibrating, setIsCalibrating] = useState(false)
+  const [calibratingPerson, setCalibratingPerson] = useState<string | null>(null)
+  const [calibrationCountdown, setCalibrationCountdown] = useState<number>(0)
+
   const personNameRef = useRef(personName)
+  const candidateNamesRef = useRef(candidateNames)
+  candidateNamesRef.current = candidateNames
+  const onTranscriptionCompleteRef = useRef(onTranscriptionComplete)
+  onTranscriptionCompleteRef.current = onTranscriptionComplete
+
   const latestVoiceDescriptorRef = useRef<number[] | null>(null)
+  const analyserRef = useRef<AnalyserNode | null>(null)
 
   useEffect(() => {
     personNameRef.current = personName
@@ -50,7 +77,79 @@ export function useServerTranscription({ enabled, stream, personName }: UseServe
     setIsVoiceVerified(false)
   }, [personName])
 
-  // Explicit voice enrollment function
+  // Dedicated active calibration: captures clean 3-second speech sample for a specific person
+  const calibrateVoice = useCallback(
+    async (targetName: string): Promise<{ success: boolean; error?: string | null }> => {
+      const cleanName = targetName.trim()
+      if (!cleanName) return { success: false, error: "Name is required for voice calibration." }
+      if (!stream || stream.getAudioTracks().length === 0) {
+        return { success: false, error: "Microphone stream is not active." }
+      }
+
+      setIsCalibrating(true)
+      setCalibratingPerson(cleanName)
+      setCalibrationCountdown(3)
+
+      return new Promise((resolve) => {
+        let count = 3
+        const freqBins = new Float32Array(256)
+        const accumulated = new Float32Array(256)
+        let samples = 0
+
+        const sampleTimer = setInterval(() => {
+          if (analyserRef.current) {
+            analyserRef.current.getFloatFrequencyData(freqBins as any)
+            for (let i = 0; i < 256; i++) {
+              accumulated[i] += freqBins[i]
+            }
+            samples++
+          }
+        }, 50)
+
+        const countdownTimer = setInterval(() => {
+          count--
+          setCalibrationCountdown(count)
+          if (count <= 0) {
+            clearInterval(countdownTimer)
+            clearInterval(sampleTimer)
+
+            // Extract voiceprint from clean calibration window
+            let descriptor: number[] = []
+            if (samples > 0) {
+              const avg = new Float32Array(256)
+              for (let i = 0; i < 256; i++) {
+                avg[i] = accumulated[i] / samples
+              }
+              descriptor = extractVoiceDescriptor(avg)
+              latestVoiceDescriptorRef.current = descriptor
+            }
+
+            void (async () => {
+              let enrolled = false
+              if (descriptor.length > 0) {
+                enrolled = await enrollVoiceprint(cleanName, descriptor)
+              }
+              setIsCalibrating(false)
+              setCalibratingPerson(null)
+              setCalibrationCountdown(0)
+
+              if (enrolled) {
+                setIsVoiceVerified(true)
+                setLastVerifiedSpeaker(cleanName)
+                setLastSpeakerStatus(`Voice calibrated for ${cleanName}`)
+                resolve({ success: true })
+              } else {
+                resolve({ success: false, error: "Failed to record voiceprint. Please speak clearly." })
+              }
+            })()
+          }
+        }, 1000)
+      })
+    },
+    [stream]
+  )
+
+  // Legacy fallback voice enrollment function
   const enrollVoice = useCallback(async (nameToEnroll?: string) => {
     const targetName = nameToEnroll || personNameRef.current
     if (!targetName) return { success: false, error: "Person name required for voice enrollment." }
@@ -61,6 +160,7 @@ export function useServerTranscription({ enabled, stream, personName }: UseServe
     const success = await enrollVoiceprint(targetName, descriptor)
     if (success) {
       setIsVoiceVerified(true)
+      setLastVerifiedSpeaker(targetName)
       setLastSpeakerStatus(`Voiceprint enrolled for ${targetName}`)
     }
     return { success, error: success ? null : "Failed to persist voiceprint." }
@@ -112,11 +212,13 @@ export function useServerTranscription({ enabled, stream, personName }: UseServe
     let voicedFramesCount = 0
 
     try {
-      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+      const AudioContextClass =
+        window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
       if (AudioContextClass) {
         audioContext = new AudioContextClass()
         analyser = audioContext.createAnalyser()
         analyser.fftSize = 512
+        analyserRef.current = analyser
         audioSource = audioContext.createMediaStreamSource(audioStream)
 
         // 180Hz High-Pass filter removes breath puffs, desk rumble, and low air whoosh
@@ -150,6 +252,7 @@ export function useServerTranscription({ enabled, stream, personName }: UseServe
             filename: `speech.${mimeType.includes("mp4") ? "m4a" : "webm"}`,
             content_type: mimeType,
             person_name: personNameRef.current,
+            candidate_names: candidateNamesRef.current,
             voice_descriptor: voiceDescriptor,
           }),
         })
@@ -166,25 +269,46 @@ export function useServerTranscription({ enabled, stream, personName }: UseServe
           return
         }
 
-        if (payload.text && payload.text.trim()) {
-          setIsVoiceVerified(true)
-          setLastSpeakerStatus(personNameRef.current ? `Voice verified: ${personNameRef.current}` : "Voice active")
+        const verifiedSpeaker = payload.speaker_name || personNameRef.current || null
+        setLastVerifiedSpeaker(verifiedSpeaker)
 
-          // Prioritize high-quality synthesized backend memory summary
-          if (payload.summary && !disposed) {
-            setMemorySummary(deduplicateSummary(payload.summary))
-          } else {
-            // Local Hugging Face ONNX summarizer fallback for offline operation
-            const localSummary = await summarizeTranscriptLocally(payload.text, personNameRef.current)
-            if (localSummary && !disposed) {
-              setMemorySummary(deduplicateSummary(localSummary))
-            }
-          }
-        } else if (payload.summary && !disposed) {
-          setIsVoiceVerified(true)
-          setMemorySummary(deduplicateSummary(payload.summary))
+        let finalSummary: string | null = null
+        if (payload.summary) {
+          finalSummary = deduplicateSummary(payload.summary)
+        } else if (payload.text && payload.text.trim()) {
+          const localSummary = await summarizeTranscriptLocally(payload.text, verifiedSpeaker ?? undefined)
+          finalSummary = deduplicateSummary(localSummary)
         }
 
+        if (payload.text && payload.text.trim()) {
+          setIsVoiceVerified(true)
+          setLastSpeakerStatus(verifiedSpeaker ? `Voice verified: ${verifiedSpeaker}` : "Voice active")
+
+          if (finalSummary && !disposed) {
+            setMemorySummary(finalSummary)
+          }
+
+          // Trigger dedicated callback with verified speaker
+          if (onTranscriptionCompleteRef.current) {
+            onTranscriptionCompleteRef.current({
+              text: payload.text,
+              summary: finalSummary,
+              speakerName: verifiedSpeaker,
+              verified: Boolean(payload.verified),
+            })
+          }
+        } else if (finalSummary && !disposed) {
+          setIsVoiceVerified(true)
+          setMemorySummary(finalSummary)
+          if (onTranscriptionCompleteRef.current) {
+            onTranscriptionCompleteRef.current({
+              text: "",
+              summary: finalSummary,
+              speakerName: verifiedSpeaker,
+              verified: Boolean(payload.verified),
+            })
+          }
+        }
 
         setError(null)
       } catch (cause) {
@@ -275,7 +399,6 @@ export function useServerTranscription({ enabled, stream, personName }: UseServe
     }
 
     // Voice Activity Detection Loop: runs every 50ms
-    // With 180Hz High-Pass Filter active, silence is < 0.008, speaking is 0.018 - 0.20
     const SPEECH_START_RMS = 0.018
     const SPEECH_CONTINUE_RMS = 0.010
     const SILENCE_TO_STOP_MS = 800
@@ -285,7 +408,7 @@ export function useServerTranscription({ enabled, stream, personName }: UseServe
     vadInterval = setInterval(() => {
       if (disposed || !analyser || !vadDataArray) return
 
-      analyser.getFloatTimeDomainData(vadDataArray)
+      analyser.getFloatTimeDomainData(vadDataArray as any)
       let sumSquares = 0
       for (let i = 0; i < vadDataArray.length; i++) {
         sumSquares += vadDataArray[i] * vadDataArray[i]
@@ -308,7 +431,7 @@ export function useServerTranscription({ enabled, stream, personName }: UseServe
       } else {
         // Actively capturing speech utterance & accumulating spectral frequency
         if (freqDataArray && accumulatedFrequencyBins) {
-          analyser.getFloatFrequencyData(freqDataArray)
+          analyser.getFloatFrequencyData(freqDataArray as any)
           for (let i = 0; i < freqDataArray.length; i++) {
             accumulatedFrequencyBins[i] += freqDataArray[i]
           }
@@ -329,8 +452,6 @@ export function useServerTranscription({ enabled, stream, personName }: UseServe
         }
       }
     }, 50)
-
-
 
     setError(null)
 
@@ -357,8 +478,11 @@ export function useServerTranscription({ enabled, stream, personName }: UseServe
     error,
     isVoiceVerified,
     lastSpeakerStatus,
+    lastVerifiedSpeaker,
+    calibrateVoice,
+    isCalibrating,
+    calibratingPerson,
+    calibrationCountdown,
     enrollVoice,
   }
 }
-
-

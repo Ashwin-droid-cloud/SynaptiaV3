@@ -11,6 +11,8 @@ from pymongo.collection import Collection
 from pymongo.database import Database
 
 import json
+import time
+import uuid
 from pathlib import Path
 
 # Load environment variables
@@ -25,6 +27,7 @@ STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 IDENTITIES_FILE = STORAGE_DIR / "face_identities.json"
 MEMORIES_FILE = STORAGE_DIR / "person_memories.json"
 PEOPLE_FILE = STORAGE_DIR / "people.json"
+CONVERSATIONS_FILE = STORAGE_DIR / "conversations.json"
 
 # In-memory storage fallbacks with disk persistence
 _mem_identities: dict[str, dict[str, Any]] = {}
@@ -32,9 +35,11 @@ _mem_observations: list[dict[str, Any]] = []
 _mem_transcripts: list[dict[str, Any]] = []
 _mem_person_memories: dict[str, dict[str, Any]] = {}
 _mem_people: dict[str, dict[str, Any]] = {}
+# Distinct conversations mapped by normalized person_name -> list of conversation entries
+_mem_conversations: dict[str, list[dict[str, Any]]] = {}
 
 def _load_persisted_data():
-    global _mem_identities, _mem_person_memories, _mem_people
+    global _mem_identities, _mem_person_memories, _mem_people, _mem_conversations
     try:
         if IDENTITIES_FILE.exists():
             with open(IDENTITIES_FILE, "r", encoding="utf-8") as f:
@@ -56,6 +61,14 @@ def _load_persisted_data():
                 _mem_people = json.load(f)
     except Exception as exc:
         logger.warning("Could not load people.json: %s", exc)
+
+    try:
+        if CONVERSATIONS_FILE.exists():
+            with open(CONVERSATIONS_FILE, "r", encoding="utf-8") as f:
+                _mem_conversations = json.load(f)
+                logger.info("Loaded distinct conversations for %d individuals", len(_mem_conversations))
+    except Exception as exc:
+        logger.warning("Could not load conversations.json: %s", exc)
 
 _load_persisted_data()
 
@@ -79,6 +92,13 @@ def _save_people():
             json.dump(_mem_people, f, default=str, indent=2)
     except Exception as exc:
         logger.warning("Could not persist people: %s", exc)
+
+def _save_conversations():
+    try:
+        with open(CONVERSATIONS_FILE, "w", encoding="utf-8") as f:
+            json.dump(_mem_conversations, f, default=str, indent=2)
+    except Exception as exc:
+        logger.warning("Could not persist conversations: %s", exc)
 
 # MongoDB configuration
 MONGODB_URI = os.getenv("MONGODB_URI")
@@ -121,22 +141,67 @@ def get_database() -> Optional[Database]:
 
 def list_face_identities() -> list[dict[str, Any]]:
     """Return the enrolled descriptor records used by the local browser matcher."""
+    identities: list[dict[str, Any]] = []
     try:
         db = get_database()
         if db is not None:
-            projection = {"_id": 0, "name": 1, "descriptor": 1, "updated_at": 1}
-            return list(db["face_identities"].find({}, projection))
+            projection = {"_id": 0, "name": 1, "descriptor": 1, "relationship": 1, "description": 1, "updated_at": 1}
+            identities = list(db["face_identities"].find({}, projection))
     except Exception as exc:  # noqa: BLE001
         logger.warning("MongoDB list_face_identities failed (%s); using in-memory fallback.", exc)
 
-    return list(_mem_identities.values())
+    if not identities:
+        identities = list(_mem_identities.values())
+
+    # Enrich with relationship/description from people collection if missing
+    for identity in identities:
+        id_name = identity.get("name", "").lower()
+        if not identity.get("relationship") or not identity.get("description"):
+            for person in _mem_people.values():
+                if person.get("name", "").lower() == id_name:
+                    if not identity.get("relationship"):
+                        identity["relationship"] = person.get("relationship", "")
+                    if not identity.get("description"):
+                        identity["description"] = person.get("cached_description", "")
+                    break
+
+    return identities
 
 
-def upsert_face_identity(name: str, descriptor: list[float]) -> dict[str, Any]:
-    """Store a user-enrolled face descriptor without storing a camera image."""
+def upsert_face_identity(
+    name: str,
+    descriptor: list[float],
+    relationship: str | None = None,
+    description: str | None = None,
+) -> dict[str, Any]:
+    """Store a user-enrolled face descriptor with relationship and context metadata without storing camera images."""
     now = datetime.utcnow()
     existing = _mem_identities.get(name, {})
-    record = {**existing, "name": name, "descriptor": descriptor, "updated_at": now}
+    record = {
+        **existing,
+        "name": name,
+        "descriptor": descriptor,
+        "updated_at": now,
+    }
+
+    # Set relationship if supplied or inherit from existing/people records
+    if relationship is not None and relationship.strip():
+        record["relationship"] = relationship.strip()
+    elif not record.get("relationship"):
+        for person in _mem_people.values():
+            if person.get("name", "").lower() == name.lower():
+                record["relationship"] = person.get("relationship", "")
+                break
+
+    # Set description if supplied or inherit from existing/people records
+    if description is not None and description.strip():
+        record["description"] = description.strip()
+    elif not record.get("description"):
+        for person in _mem_people.values():
+            if person.get("name", "").lower() == name.lower():
+                record["description"] = person.get("cached_description", "")
+                break
+
     _mem_identities[name] = record
     _save_identities()
 
@@ -148,58 +213,190 @@ def upsert_face_identity(name: str, descriptor: list[float]) -> dict[str, Any]:
                 {"$set": record, "$setOnInsert": {"created_at": now}},
                 upsert=True,
             )
-            logger.info("Enrolled local face identity %s in MongoDB Atlas", name)
+            logger.info("Enrolled local face identity %s (relationship=%s) in MongoDB Atlas", name, record.get("relationship"))
             return record
     except Exception as exc:  # noqa: BLE001
         logger.warning("MongoDB upsert_face_identity failed (%s); stored in-memory + persistent disk.", exc)
 
-    logger.info("Enrolled local face identity %s (saved to disk)", name)
+    logger.info("Enrolled local face identity %s (relationship=%s, saved to disk)", name, record.get("relationship"))
     return record
 
 
 def upsert_voice_identity(name: str, voice_descriptor: list[float]) -> dict[str, Any]:
     """Store a user-enrolled acoustic voice descriptor."""
     now = datetime.utcnow()
-    existing = _mem_identities.get(name, {})
-    record = {**existing, "name": name, "voice_descriptor": voice_descriptor, "voice_updated_at": now}
-    _mem_identities[name] = record
+    # Find case-insensitive existing record
+    clean_name = name.strip()
+    target_key = clean_name
+    for k in _mem_identities:
+        if k.lower() == clean_name.lower():
+            target_key = k
+            break
+
+    existing = _mem_identities.get(target_key, {})
+    record = {**existing, "name": target_key, "voice_descriptor": voice_descriptor, "voice_updated_at": now}
+    _mem_identities[target_key] = record
     _save_identities()
 
     try:
         db = get_database()
         if db is not None:
             db["face_identities"].update_one(
-                {"name": name},
+                {"name": {"$regex": f"^{re.escape(clean_name)}$", "$options": "i"}},
                 {"$set": record, "$setOnInsert": {"created_at": now}},
                 upsert=True,
             )
-            logger.info("Enrolled voice identity for %s in MongoDB Atlas", name)
+            logger.info("Enrolled voice identity for %s in MongoDB Atlas", target_key)
             return record
     except Exception as exc:  # noqa: BLE001
         logger.warning("MongoDB upsert_voice_identity failed (%s); stored in-memory + persistent disk.", exc)
 
-    logger.info("Enrolled voice identity for %s (saved to disk)", name)
+    logger.info("Enrolled voice identity for %s (saved to disk)", target_key)
     return record
 
 
 def get_voice_identity(name: str) -> Optional[list[float]]:
     """Retrieve enrolled voice descriptor for a person if available."""
+    clean_name = name.strip()
     try:
         db = get_database()
         if db is not None:
-            doc = db["face_identities"].find_one({"name": name}, {"_id": 0, "voice_descriptor": 1})
+            doc = db["face_identities"].find_one(
+                {"name": {"$regex": f"^{re.escape(clean_name)}$", "$options": "i"}},
+                {"_id": 0, "voice_descriptor": 1}
+            )
             if doc and "voice_descriptor" in doc:
                 return doc["voice_descriptor"]
     except Exception as exc:  # noqa: BLE001
         logger.warning("MongoDB get_voice_identity failed (%s); checking in-memory.", exc)
 
-    record = _mem_identities.get(name)
-    return record.get("voice_descriptor") if record else None
+    for k, v in _mem_identities.items():
+        if k.lower() == clean_name.lower() and v.get("voice_descriptor"):
+            return v["voice_descriptor"]
+    return None
 
+
+def get_all_voice_identities() -> dict[str, list[float]]:
+    """Return all enrolled voiceprints as a dict of {name: descriptor}."""
+    profiles: dict[str, list[float]] = {}
+    for name, rec in _mem_identities.items():
+        if rec.get("voice_descriptor"):
+            profiles[name] = rec["voice_descriptor"]
+    return profiles
+
+
+def delete_voice_identity(name: str) -> bool:
+    """Clear voiceprint for a specific person to allow re-calibration."""
+    clean_name = name.strip()
+    for k in list(_mem_identities.keys()):
+        if k.lower() == clean_name.lower():
+            _mem_identities[k].pop("voice_descriptor", None)
+            _mem_identities[k].pop("voice_updated_at", None)
+    _save_identities()
+
+    try:
+        db = get_database()
+        if db is not None:
+            db["face_identities"].update_many(
+                {"name": {"$regex": f"^{re.escape(clean_name)}$", "$options": "i"}},
+                {"$unset": {"voice_descriptor": "", "voice_updated_at": ""}}
+            )
+    except Exception:
+        pass
+    return True
+
+
+# ── Distinct Conversation Store ─────────────────────────────────────────────
+
+def record_distinct_conversation(
+    person_name: str,
+    text: str,
+    summary: str | None = None,
+    voice_verified: bool = True,
+) -> dict[str, Any]:
+    """Store a speech utterance strictly in the specified individual's conversation history."""
+    now = datetime.utcnow()
+    norm_name = person_name.strip().lower()
+    entry = {
+        "id": f"conv_{int(time.time() * 1000)}_{uuid.uuid4().hex[:6]}",
+        "person_name": person_name.strip(),
+        "speaker": person_name.strip(),
+        "text": text.strip(),
+        "summary": summary,
+        "voice_verified": voice_verified,
+        "timestamp": now.isoformat(),
+    }
+
+    if norm_name not in _mem_conversations:
+        _mem_conversations[norm_name] = []
+    _mem_conversations[norm_name].append(entry)
+    _save_conversations()
+
+    # Also record in general observations
+    record = {
+        "person_name": person_name.strip(),
+        "text": text.strip(),
+        "created_at": now,
+    }
+    _mem_transcripts.append(record)
+
+    try:
+        db = get_database()
+        if db is not None:
+            db["conversation_observations"].insert_one({**entry, "created_at": now})
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("MongoDB record_distinct_conversation failed (%s).", exc)
+
+    return entry
+
+
+def get_distinct_conversations(person_name: str, limit: int = 30) -> list[dict[str, Any]]:
+    """Retrieve distinct conversation logs exclusively for the named individual."""
+    norm_name = person_name.strip().lower()
+    try:
+        db = get_database()
+        if db is not None:
+            cursor = db["conversation_observations"].find(
+                {"person_name": {"$regex": f"^{re.escape(norm_name)}$", "$options": "i"}},
+                {"_id": 0}
+            ).sort("created_at", -1).limit(limit)
+            items = list(reversed(list(cursor)))
+            if items:
+                return items
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("MongoDB get_distinct_conversations failed (%s); checking in-memory.", exc)
+
+    entries = _mem_conversations.get(norm_name, [])
+    return entries[-limit:]
+
+
+def list_all_conversations() -> dict[str, list[dict[str, Any]]]:
+    """Retrieve conversations grouped by individual."""
+    return {k: v[-20:] for k, v in _mem_conversations.items()}
+
+
+def clear_person_conversations(person_name: str) -> bool:
+    """Clear conversation history for a specific individual."""
+    norm_name = person_name.strip().lower()
+    if norm_name in _mem_conversations:
+        _mem_conversations[norm_name].clear()
+        _save_conversations()
+    try:
+        db = get_database()
+        if db is not None:
+            db["conversation_observations"].delete_many(
+                {"person_name": {"$regex": f"^{re.escape(norm_name)}$", "$options": "i"}}
+            )
+    except Exception:
+        pass
+    return True
 
 
 def record_transcript(person_name: str | None, text: str) -> dict[str, Any]:
-    """Persist a short speech-recognition result for the AI pipeline."""
+    """Persist a speech-recognition result into the distinct conversation store."""
+    if person_name:
+        return record_distinct_conversation(person_name, text)
+
     record = {
         "person_name": person_name,
         "text": text,
@@ -218,31 +415,39 @@ def record_transcript(person_name: str | None, text: str) -> dict[str, Any]:
 
 
 def get_person_memory(name: str) -> Optional[dict[str, Any]]:
-    """Return the latest saved AI memory for an explicitly enrolled person."""
+    """Return the latest saved AI memory for an explicitly enrolled person (case-insensitive)."""
+    clean_name = name.strip()
     try:
         db = get_database()
         if db is not None:
-            doc = db["person_memories"].find_one({"name": name}, {"_id": 0})
+            doc = db["person_memories"].find_one(
+                {"name": {"$regex": f"^{re.escape(clean_name)}$", "$options": "i"}},
+                {"_id": 0}
+            )
             if doc:
                 return doc
     except Exception as exc:  # noqa: BLE001
         logger.warning("MongoDB get_person_memory failed (%s); checking in-memory.", exc)
 
-    return _mem_person_memories.get(name)
+    for k, v in _mem_person_memories.items():
+        if k.lower() == clean_name.lower():
+            return v
+    return None
 
 
 def upsert_person_memory(name: str, summary: str) -> dict[str, Any]:
     """Persist a grounded rolling summary for a named, enrolled person."""
     now = datetime.utcnow()
-    record = {"name": name, "summary": summary, "updated_at": now}
-    _mem_person_memories[name] = record
+    clean_name = name.strip()
+    record = {"name": clean_name, "summary": summary, "updated_at": now}
+    _mem_person_memories[clean_name] = record
     _save_memories()
 
     try:
         db = get_database()
         if db is not None:
             db["person_memories"].update_one(
-                {"name": name},
+                {"name": {"$regex": f"^{re.escape(clean_name)}$", "$options": "i"}},
                 {"$set": record, "$setOnInsert": {"created_at": now}},
                 upsert=True,
             )
@@ -254,13 +459,24 @@ def upsert_person_memory(name: str, summary: str) -> dict[str, Any]:
 
 
 def get_recent_transcripts(person_name: str, limit: int = 12) -> list[str]:
-    """Return stored speech segments in chronological order for memory recovery."""
+    """Return stored speech segments in chronological order exclusively for the requested person."""
+    norm_name = person_name.strip().lower()
+
+    # Query distinct conversation store first
+    if norm_name in _mem_conversations:
+        transcripts = [c["text"] for c in _mem_conversations[norm_name] if c.get("text")]
+        if transcripts:
+            return transcripts[-limit:]
+
     try:
         db = get_database()
         if db is not None:
             cursor = (
                 db["conversation_observations"]
-                .find({"person_name": person_name}, {"_id": 0, "text": 1})
+                .find(
+                    {"person_name": {"$regex": f"^{re.escape(norm_name)}$", "$options": "i"}},
+                    {"_id": 0, "text": 1}
+                )
                 .sort("created_at", -1)
                 .limit(limit)
             )
@@ -270,7 +486,10 @@ def get_recent_transcripts(person_name: str, limit: int = 12) -> list[str]:
     except Exception as exc:  # noqa: BLE001
         logger.warning("MongoDB get_recent_transcripts failed (%s); checking in-memory.", exc)
 
-    matching = [t["text"] for t in _mem_transcripts if t.get("person_name") == person_name and t.get("text")]
+    matching = [
+        t["text"] for t in _mem_transcripts
+        if (t.get("person_name") or "").lower() == norm_name and t.get("text")
+    ]
     return matching[-limit:]
 
 
@@ -432,10 +651,12 @@ def clear_all_data() -> dict[str, Any]:
     _mem_transcripts.clear()
     _mem_person_memories.clear()
     _mem_people.clear()
+    _mem_conversations.clear()
 
     _save_identities()
     _save_memories()
     _save_people()
+    _save_conversations()
 
     try:
         db = get_database()
@@ -448,7 +669,7 @@ def clear_all_data() -> dict[str, Any]:
     except Exception as exc:  # noqa: BLE001
         logger.warning("MongoDB clear_all_data failed (%s).", exc)
 
-    logger.info("All face identities, voiceprints, and person memories have been wiped clean.")
+    logger.info("All face identities, voiceprints, distinct conversations, and person memories have been wiped clean.")
     return {"cleared": True}
 
 

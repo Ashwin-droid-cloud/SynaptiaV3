@@ -137,7 +137,16 @@ class HintProvider:
             },
         ]
         result = _groq_chat(messages, temperature=0.7, max_tokens=200)
-        return result or "Unable to generate a clue at this time. Please try again shortly."
+        if result:
+            return result
+        if puzzle and puzzle.get("hints") and hint_number < len(puzzle["hints"]):
+            return puzzle["hints"][hint_number]
+        heuristic_clues = [
+            "Consider the core constraint in the question and examine alternative meanings of the terms.",
+            "Break down the problem step-by-step and test simple candidate solutions.",
+            "Look closely at the specific wording or pattern — the solution is directly linked to the phrasing.",
+        ]
+        return heuristic_clues[min(hint_number, len(heuristic_clues) - 1)]
 
     # ── Public: chat ─────────────────────────────────────────────────────────
 
@@ -174,8 +183,18 @@ class HintProvider:
                 {"role": "assistant", "content": response_text}
             )
         else:
-            response_text = self._next_fallback()
-            logger.warning("[HintProvider] Groq unavailable; sending fallback to user.")
+            if puzzle and puzzle.get("hints"):
+                idx = min(hints_used, len(puzzle["hints"]) - 1)
+                response_text = (
+                    f"I'm here to guide you! Here is a thoughtful direction to explore: "
+                    f"\"{puzzle['hints'][idx]}\". Take your time and see what connections arise!"
+                )
+            else:
+                response_text = self._next_fallback()
+            self.conversations[session_id].append(
+                {"role": "assistant", "content": response_text}
+            )
+            logger.warning("[HintProvider] Groq unavailable; sending smart fallback to user.")
 
         return response_text
 

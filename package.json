@@ -1,8 +1,19 @@
 {
   "name": "synaptia",
   "version": "1.0.0",
-  "description": "Synaptia – AI-powered cognitive training platform with neuroscience-backed exercises",
+  "description": "Synaptia – AI-powered cognitive training & AR memory recall platform",
   "private": true,
+  "scripts": {
+    "dev": "npm --prefix SynaptiaV2-main/frontend run dev",
+    "dev:all": "./run.sh --all",
+    "dev:v2": "./run.sh --all",
+    "dev:cognitive": "python3 app.py",
+    "dev:inference": "./run.sh --inference",
+    "dev:frontend": "npm --prefix SynaptiaV2-main/frontend run dev",
+    "build": "npm --prefix SynaptiaV2-main/frontend run build",
+    "start": "npm --prefix SynaptiaV2-main/frontend start",
+    "test": "pytest tests/ -v"
+  },
   "dependencies": {
     "firebase": "^12.12.1"
   }

@@ -21,7 +21,7 @@ from app import app
 class TestVisionMemoryEngine:
 
     def setup_method(self):
-        self.engine = VisionMemoryEngine()
+        self.engine = VisionMemoryEngine(seed_defaults=True)
 
     def test_default_profiles_seeded(self):
         people = self.engine.list_people()
@@ -205,8 +205,11 @@ class TestV2ApiRoutes:
         assert "recall_cues" in data
 
     def test_api_v2_events_simulate(self):
-        res = self.client.get("/api/v2/events/simulate?person_id=person_001")
+        from app import vision_memory
+        p = vision_memory.enroll_person(name="Test Subject", relationship="Tester")
+        res = self.client.get(f"/api/v2/events/simulate?person_id={p['id']}")
         assert res.status_code == 200
         data = res.get_json()
         assert data["type"] == "person_detected"
-        assert data["name"] == "Sarah Jenkins"
+        assert data["name"] == "Test Subject"
+        vision_memory.delete_person(p["id"])
