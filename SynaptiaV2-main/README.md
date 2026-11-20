@@ -1,4 +1,4 @@
-# mongodb-hackathon
+
 
 ## Getting Started
 
